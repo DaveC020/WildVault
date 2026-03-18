@@ -2,6 +2,7 @@ package com.melliza.wildvault.Login;
 
 import com.melliza.wildvault.Register.RegisterEntity;
 import com.melliza.wildvault.Register.RegisterRepository;
+import com.melliza.wildvault.Shared.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,7 +17,10 @@ public class LoginService {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
-    public String authenticate(LoginDTO loginDTO) {
+    @Autowired
+    private JwtService jwtService;
+
+    public String authenticateAndGenerateToken(LoginDTO loginDTO) {
         System.out.println("[DEBUG] Attempting login for username: " + loginDTO.getUsername());
         
         Optional<RegisterEntity> userOptional = registerRepository.findByUsername(loginDTO.getUsername());
@@ -32,13 +36,13 @@ public class LoginService {
             
             if (passwordMatches) {
                 System.out.println("[DEBUG] Login successful");
-                return "Login successful";
+                return jwtService.generateToken(user.getUsername());
             }
         } else {
             System.out.println("[DEBUG] User not found in database");
         }
         
         System.out.println("[DEBUG] Login failed - invalid credentials");
-        return "Invalid credentials";
+        return null;
     }
 }
