@@ -18,6 +18,15 @@ public class RegisterEntity {
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "student_id", unique = true)
+    private String studentId;
+
+    @Column(name = "full_name")
+    private String fullName;
+
+    @Column(name = "display_name")
+    private String displayName;
+
     public Long getId() {
         return id;
     }
@@ -48,5 +57,29 @@ public class RegisterEntity {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getStudentId() {
+        return studentId;
+    }
+
+    public void setStudentId(String studentId) {
+        this.studentId = studentId;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 }

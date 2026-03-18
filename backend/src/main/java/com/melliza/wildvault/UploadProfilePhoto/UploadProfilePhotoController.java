@@ -1,13 +1,19 @@
 package com.melliza.wildvault.UploadProfilePhoto;
 
+import com.melliza.wildvault.Profile.ProfileEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/users")
@@ -40,5 +46,34 @@ public class UploadProfilePhotoController {
         }
 
         return ResponseEntity.badRequest().body(response);
+    }
+
+    @GetMapping("/profile/photo")
+    public ResponseEntity<byte[]> getProfilePhoto(Authentication authentication) {
+        String username = authentication == null ? null : authentication.getName();
+        if (username == null || username.isBlank()) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Optional<ProfileEntity> profileOptional = uploadProfilePhotoService.getProfilePhotoByUsername(username);
+        if (profileOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        ProfileEntity profile = profileOptional.get();
+        String contentType = profile.getPhotoContentType();
+        MediaType mediaType;
+        try {
+            mediaType = (contentType == null || contentType.isBlank())
+                    ? MediaType.IMAGE_JPEG
+                    : MediaType.parseMediaType(contentType);
+        } catch (Exception ignored) {
+            mediaType = MediaType.IMAGE_JPEG;
+        }
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .contentType(mediaType)
+                .body(profile.getPhotoData());
     }
 }

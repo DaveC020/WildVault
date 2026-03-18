@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/register")
-@CrossOrigin(origins = "http://localhost:5173") // Depending on React framework, might be 3000, 5173 etc
+@CrossOrigin(origins = "http://localhost:5173")
 public class RegisterController {
 
     @Autowired

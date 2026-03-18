@@ -9,9 +9,11 @@ import java.util.Locale;
 @Service
 public class FileStorageService {
 
+    private static final byte[] EMPTY_BYTES = new byte[0];
+
     public byte[] extractAndValidateImageBytes(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            return null;
+            return EMPTY_BYTES;
         }
 
         String originalFilename = file.getOriginalFilename();
@@ -22,13 +24,13 @@ public class FileStorageService {
         boolean validContentType = "image/jpeg".equalsIgnoreCase(contentType) || "image/png".equalsIgnoreCase(contentType);
 
         if (!validExtension || !validContentType) {
-            return null;
+            return EMPTY_BYTES;
         }
 
         try {
             return file.getBytes();
         } catch (IOException e) {
-            return null;
+            return EMPTY_BYTES;
         }
     }
 

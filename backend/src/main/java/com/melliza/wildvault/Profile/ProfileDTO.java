@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 
 public class ProfileDTO {
     private Long id;
+    private String studentId;
+    private String username;
+    private String displayName;
     private String email;
     private String fullName;
     private String photoUrl;
@@ -15,6 +18,30 @@ public class ProfileDTO {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getStudentId() {
+        return studentId;
+    }
+
+    public void setStudentId(String studentId) {
+        this.studentId = studentId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public String getEmail() {

@@ -20,11 +20,24 @@ public class ProfileEntity {
     @Column(name = "full_name")
     private String fullName;
 
+    @Column(name = "display_name")
+    private String displayName;
+
     @Column(name = "photo_url")
     private String photoUrl;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Lob
+    @Column(name = "photo_data")
+    private byte[] photoData;
+
+    @Column(name = "photo_content_type")
+    private String photoContentType;
+
+    @Column(name = "student_id", unique = true)
+    private String studentId;
 
     public Long getId() {
         return id;
@@ -58,6 +71,14 @@ public class ProfileEntity {
         this.fullName = fullName;
     }
 
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
     public String getPhotoUrl() {
         return photoUrl;
     }
@@ -72,5 +93,29 @@ public class ProfileEntity {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public byte[] getPhotoData() {
+        return photoData;
+    }
+
+    public void setPhotoData(byte[] photoData) {
+        this.photoData = photoData;
+    }
+
+    public String getPhotoContentType() {
+        return photoContentType;
+    }
+
+    public void setPhotoContentType(String photoContentType) {
+        this.photoContentType = photoContentType;
+    }
+
+    public String getStudentId() {
+        return studentId;
+    }
+
+    public void setStudentId(String studentId) {
+        this.studentId = studentId;
     }
 }

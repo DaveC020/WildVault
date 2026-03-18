@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface ProfileRepository extends JpaRepository<RegisterEntity, Long> {
+public interface EditPswdRepository extends JpaRepository<RegisterEntity, Long> {
     Optional<RegisterEntity> findByUsername(String username);
 }

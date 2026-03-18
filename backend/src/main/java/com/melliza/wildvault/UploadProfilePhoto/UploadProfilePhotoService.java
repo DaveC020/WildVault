@@ -3,15 +3,16 @@ package com.melliza.wildvault.UploadProfilePhoto;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.melliza.wildvault.Profile.ProfileEntity;
 import java.util.Optional;
 
 @Service
 public class UploadProfilePhotoService {
 
-    private final ProfileRepository profileRepository;
+    private final UploadProfilePhotoRepository profileRepository;
     private final FileStorageService fileStorageService;
 
-    public UploadProfilePhotoService(ProfileRepository profileRepository, FileStorageService fileStorageService) {
+    public UploadProfilePhotoService(UploadProfilePhotoRepository profileRepository, FileStorageService fileStorageService) {
         this.profileRepository = profileRepository;
         this.fileStorageService = fileStorageService;
     }
@@ -22,7 +23,7 @@ public class UploadProfilePhotoService {
         }
 
         byte[] imageBytes = fileStorageService.extractAndValidateImageBytes(file);
-        if (imageBytes == null) {
+        if (imageBytes.length == 0) {
             return new UploadProfilePhotoDTO("Invalid file. Only .jpg and .png are allowed", null);
         }
 
@@ -40,5 +41,13 @@ public class UploadProfilePhotoService {
         profileRepository.save(profile);
 
         return new UploadProfilePhotoDTO("Profile photo uploaded successfully", fileReference);
+    }
+
+    public Optional<ProfileEntity> getProfilePhotoByUsername(String username) {
+        if (username == null || username.isBlank()) {
+            return Optional.empty();
+        }
+        return profileRepository.findByUsername(username)
+                .filter(profile -> profile.getPhotoData() != null && profile.getPhotoData().length > 0);
     }
 }
