@@ -1,5 +1,61 @@
 const API_BASE_URL = 'http://localhost:8080';
 const TOKEN_STORAGE_KEY = 'token';
+const ALLOWED_PROFILE_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png']);
+const ALLOWED_PROFILE_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png'];
+
+function buildApiError(defaultMessage, response, data) {
+	const error = new Error(data?.message || defaultMessage);
+	error.status = response?.status;
+	return error;
+}
+
+function hasAllowedProfileImageExtension(filename) {
+	if (!filename || typeof filename !== 'string') {
+		return false;
+	}
+
+	const lower = filename.toLowerCase();
+	return ALLOWED_PROFILE_IMAGE_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+
+export function validateProfileImageFile(file) {
+	if (!file) {
+		return { valid: false, message: 'No file selected.' };
+	}
+
+	const hasValidExtension = hasAllowedProfileImageExtension(file.name || '');
+	const mimeType = (file.type || '').toLowerCase();
+	const hasValidMimeType = mimeType ? ALLOWED_PROFILE_IMAGE_MIME_TYPES.has(mimeType) : false;
+
+	if (!hasValidExtension || !hasValidMimeType) {
+		return {
+			valid: false,
+			message: 'Invalid file type. Only PNG and JPG/JPEG files are allowed.',
+		};
+	}
+
+	return { valid: true, message: '' };
+}
+
+export function decodeJwtSubject(token) {
+	if (!token || typeof token !== 'string') {
+		return null;
+	}
+
+	const parts = token.split('.');
+	if (parts.length !== 3) {
+		return null;
+	}
+
+	try {
+		const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+		const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+		const payload = JSON.parse(atob(padded));
+		return typeof payload?.sub === 'string' ? payload.sub : null;
+	} catch {
+		return null;
+	}
+}
 
 export function setAuthToken(token) {
 	localStorage.setItem(TOKEN_STORAGE_KEY, token);
@@ -25,7 +81,7 @@ export async function loginUser({ username, password }) {
 	const data = await response.json().catch(() => null);
 
 	if (!response.ok) {
-		throw new Error(data?.message || 'Invalid credentials');
+		throw buildApiError('Invalid credentials', response, data);
 	}
 
 	if (!data?.token) {
@@ -46,26 +102,26 @@ export async function fetchUserProfile(token) {
 	const data = await response.json().catch(() => null);
 
 	if (!response.ok) {
-		throw new Error(data?.message || 'Failed to load user profile');
+		throw buildApiError('Failed to load user profile', response, data);
 	}
 
 	return data;
 }
 
-export async function updateUserProfile(token, { displayName, fullName, email, studentId } = {}) {
+export async function updateUserProfile(token, { firstName, lastName, email, studentId } = {}) {
 	const response = await fetch(`${API_BASE_URL}/users/profile`, {
 		method: 'PUT',
 		headers: {
 			'Content-Type': 'application/json',
 			Authorization: `Bearer ${token}`,
 		},
-		body: JSON.stringify({ displayName, fullName, email, studentId }),
+		body: JSON.stringify({ firstName, lastName, email, studentId }),
 	});
 
 	const data = await response.json().catch(() => null);
 
 	if (!response.ok) {
-		throw new Error(data?.message || 'Failed to update profile');
+		throw buildApiError('Failed to update profile', response, data);
 	}
 
 	return data;
@@ -84,7 +140,7 @@ export async function updateUserPassword(token, { currentPassword, newPassword, 
 	const data = await response.json().catch(() => null);
 
 	if (!response.ok) {
-		throw new Error(data?.message || 'Failed to update password');
+		throw buildApiError('Failed to update password', response, data);
 	}
 
 	return data;
@@ -93,6 +149,11 @@ export async function updateUserPassword(token, { currentPassword, newPassword, 
 export async function uploadUserProfilePhoto(token, file) {
 	if (!file) {
 		throw new Error('No file selected');
+	}
+
+	const validation = validateProfileImageFile(file);
+	if (!validation.valid) {
+		throw new Error(validation.message);
 	}
 
 	const formData = new FormData();
@@ -109,7 +170,7 @@ export async function uploadUserProfilePhoto(token, file) {
 	const data = await response.json().catch(() => null);
 
 	if (!response.ok) {
-		throw new Error(data?.message || 'Failed to upload profile photo');
+		throw buildApiError('Failed to upload profile photo', response, data);
 	}
 
 	return data;
@@ -124,9 +185,12 @@ function blobToDataUrl(blob) {
 	});
 }
 
-export async function fetchUserProfilePhoto(token) {
-	const response = await fetch(`${API_BASE_URL}/users/profile/photo`, {
+export async function fetchUserProfilePhoto(token, options = {}) {
+	const { forceRefresh = false } = options;
+	const query = forceRefresh ? `?t=${Date.now()}` : '';
+	const response = await fetch(`${API_BASE_URL}/users/profile/photo${query}`, {
 		method: 'GET',
+		cache: 'no-store',
 		headers: {
 			Authorization: `Bearer ${token}`,
 		},
@@ -137,7 +201,7 @@ export async function fetchUserProfilePhoto(token) {
 	}
 
 	if (!response.ok) {
-		throw new Error('Failed to load profile photo');
+		throw buildApiError('Failed to load profile photo', response, null);
 	}
 
 	const blob = await response.blob();
@@ -172,10 +236,12 @@ export function getInitials(fullName) {
 	return `${first}${last}`.toUpperCase();
 }
 
-export function buildDisplayName(profile, fallbackIdentifier = '') {
-	const displayName = profile?.displayName;
-	if (displayName && displayName.trim()) {
-		return displayName.trim();
+export function buildFullName(profile, fallbackIdentifier = '') {
+	const firstName = profile?.firstName;
+	const lastName = profile?.lastName;
+	const composed = [firstName, lastName].filter((part) => typeof part === 'string' && part.trim()).join(' ').trim();
+	if (composed) {
+		return composed;
 	}
 
 	const fullName = profile?.fullName || profile?.name;

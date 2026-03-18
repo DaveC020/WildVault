@@ -3,7 +3,7 @@ import { Mail, Lock, ShieldCheck } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { Logo } from '../../components/Logo';
 import {
-  buildDisplayName,
+  buildFullName,
   fetchUserProfilePhoto,
   fetchUserProfile,
   loginUser,
@@ -35,9 +35,11 @@ export function Login({ onLogin, onSwitchToRegister }) {
       let resolvedUser = {
         id: null,
         studentId: null,
+        department: '',
         username: formData.email,
-        displayName: buildDisplayName(null, formData.email),
-        fullName: buildDisplayName(null, formData.email),
+        firstName: '',
+        lastName: '',
+        fullName: buildFullName(null, formData.email),
         email: formData.email,
         photoUrl: null,
       };
@@ -45,15 +47,14 @@ export function Login({ onLogin, onSwitchToRegister }) {
       try {
         const profile = await fetchUserProfile(auth.token);
         const profilePhoto = await fetchUserProfilePhoto(auth.token).catch(() => null);
-        const resolvedDisplayName = buildDisplayName(profile, formData.email);
-        const resolvedFullName = profile?.fullName?.trim()
-          ? profile.fullName.trim()
-          : buildDisplayName(null, profile?.username || formData.email);
+        const resolvedFullName = buildFullName(profile, profile?.username || formData.email);
         resolvedUser = {
           id: profile?.id || null,
           studentId: profile?.studentId || null,
+          department: profile?.department || '',
           username: profile?.username || formData.email,
-          displayName: resolvedDisplayName,
+          firstName: profile?.firstName || '',
+          lastName: profile?.lastName || '',
           fullName: resolvedFullName,
           email: profile?.email || formData.email,
           photoUrl: profilePhoto || profile?.photoUrl || null,

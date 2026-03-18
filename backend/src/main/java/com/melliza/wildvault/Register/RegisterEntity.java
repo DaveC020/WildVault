@@ -21,11 +21,11 @@ public class RegisterEntity {
     @Column(name = "student_id", unique = true)
     private String studentId;
 
-    @Column(name = "full_name")
-    private String fullName;
+    @Column(name = "first_name")
+    private String firstName;
 
-    @Column(name = "display_name")
-    private String displayName;
+    @Column(name = "last_name")
+    private String lastName;
 
     public Long getId() {
         return id;
@@ -67,19 +67,19 @@ public class RegisterEntity {
         this.studentId = studentId;
     }
 
-    public String getFullName() {
-        return fullName;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
-    public String getDisplayName() {
-        return displayName;
+    public String getLastName() {
+        return lastName;
     }
 
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 }

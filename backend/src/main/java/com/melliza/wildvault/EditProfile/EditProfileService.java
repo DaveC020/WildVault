@@ -1,6 +1,7 @@
 package com.melliza.wildvault.EditProfile;
 
 import org.springframework.stereotype.Service;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import com.melliza.wildvault.Profile.ProfileEntity;
 import java.util.LinkedHashMap;
@@ -39,41 +40,69 @@ public class EditProfileService {
             }
         }
 
-        if (request.getFullName() != null && !request.getFullName().trim().isBlank()) {
-            String immutableFullName = user.getFullName() == null ? "" : user.getFullName().trim();
-            if (!request.getFullName().trim().equalsIgnoreCase(immutableFullName)) {
-                return Map.of("error", "Full name cannot be changed");
+        if (request.getFirstName() != null && !request.getFirstName().trim().isBlank()) {
+            String immutableFirstName = user.getFirstName() == null ? "" : user.getFirstName().trim();
+            if (!request.getFirstName().trim().equalsIgnoreCase(immutableFirstName)) {
+                return Map.of("error", "First name cannot be changed");
+            }
+        }
+
+        if (request.getLastName() != null && !request.getLastName().trim().isBlank()) {
+            String immutableLastName = user.getLastName() == null ? "" : user.getLastName().trim();
+            if (!request.getLastName().trim().equalsIgnoreCase(immutableLastName)) {
+                return Map.of("error", "Last name cannot be changed");
             }
         }
 
         if (request.getEmail() != null && !request.getEmail().trim().isBlank()) {
-            String immutableEmail = user.getEmail() == null ? "" : user.getEmail().trim();
-            if (!request.getEmail().trim().equalsIgnoreCase(immutableEmail)) {
-                return Map.of("error", "Email cannot be changed");
+            String requestedEmail = request.getEmail().trim();
+            String currentEmail = user.getEmail() == null ? "" : user.getEmail().trim();
+            if (!requestedEmail.equalsIgnoreCase(currentEmail)) {
+                Optional<ProfileEntity> emailOwner = profileRepository.findByEmail(requestedEmail);
+                if (emailOwner.isPresent() && !emailOwner.get().getId().equals(user.getId())) {
+                    return Map.of("error", "Email already exists");
+                }
+                user.setEmail(requestedEmail);
             }
         }
 
-        String requestedDisplayName = request.getDisplayName() == null ? "" : request.getDisplayName().trim();
-        if (requestedDisplayName.isBlank()) {
-            return Map.of("error", "Display name is required");
+        ProfileEntity savedUser;
+        try {
+            savedUser = profileRepository.save(user);
+        } catch (DataIntegrityViolationException ex) {
+            return Map.of("error", "Email already exists");
         }
-
-        if (!requestedDisplayName.equals(user.getDisplayName())) {
-            user.setDisplayName(requestedDisplayName);
-        }
-
-        ProfileEntity savedUser = profileRepository.save(user);
 
         Map<String, Object> userPayload = new LinkedHashMap<>();
         userPayload.put("id", savedUser.getId());
         userPayload.put("studentId", savedUser.getStudentId());
         userPayload.put("username", savedUser.getUsername());
-        userPayload.put("displayName", savedUser.getDisplayName());
+        userPayload.put("firstName", savedUser.getFirstName());
+        userPayload.put("lastName", savedUser.getLastName());
+        userPayload.put("fullName", buildFullName(savedUser));
         userPayload.put("email", savedUser.getEmail());
-        userPayload.put("fullName", savedUser.getFullName());
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("user", userPayload);
         return response;
+    }
+
+    private String buildFullName(ProfileEntity user) {
+        String firstName = user.getFirstName() == null ? "" : user.getFirstName().trim();
+        String lastName = user.getLastName() == null ? "" : user.getLastName().trim();
+
+        if (firstName.isBlank() && lastName.isBlank()) {
+            return user.getUsername();
+        }
+
+        if (firstName.isBlank()) {
+            return lastName;
+        }
+
+        if (lastName.isBlank()) {
+            return firstName;
+        }
+
+        return firstName + " " + lastName;
     }
 }

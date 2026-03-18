@@ -5,8 +5,8 @@ public class RegisterDTO {
     private String email;
     private String password;
     private String studentId;
-    private String fullName;
-    private String displayName;
+    private String firstName;
+    private String lastName;
 
     public String getUsername() {
         return username;
@@ -40,19 +40,19 @@ public class RegisterDTO {
         this.studentId = studentId;
     }
 
-    public String getFullName() {
-        return fullName;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
-    public String getDisplayName() {
-        return displayName;
+    public String getLastName() {
+        return lastName;
     }
 
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 }

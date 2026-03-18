@@ -15,14 +15,14 @@ public class RegisterService {
     }
 
     public String registerUser(RegisterDTO registerDTO) {
-        String fullName = registerDTO.getFullName() == null ? "" : registerDTO.getFullName().trim();
-        if (fullName.isBlank()) {
-            return "Full name is required";
+        String firstName = registerDTO.getFirstName() == null ? "" : registerDTO.getFirstName().trim();
+        if (firstName.isBlank()) {
+            return "First name is required";
         }
 
-        String displayName = registerDTO.getDisplayName() == null ? "" : registerDTO.getDisplayName().trim();
-        if (displayName.isBlank()) {
-            return "Display name is required";
+        String lastName = registerDTO.getLastName() == null ? "" : registerDTO.getLastName().trim();
+        if (lastName.isBlank()) {
+            return "Last name is required";
         }
 
         String studentId = registerDTO.getStudentId() == null ? "" : registerDTO.getStudentId().trim();
@@ -45,8 +45,8 @@ public class RegisterService {
         user.setEmail(registerDTO.getEmail());
         user.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
         user.setStudentId(studentId);
-        user.setFullName(fullName);
-        user.setDisplayName(displayName);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
 
         registerRepository.save(user);
         return "Registration successful";

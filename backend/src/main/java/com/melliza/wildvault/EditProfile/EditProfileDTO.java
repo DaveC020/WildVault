@@ -3,9 +3,9 @@ package com.melliza.wildvault.EditProfile;
 public class EditProfileDTO {
 
     private String studentId;
-    private String fullName;
+    private String firstName;
+    private String lastName;
     private String email;
-    private String displayName;
 
     public String getStudentId() {
         return studentId;
@@ -15,12 +15,20 @@ public class EditProfileDTO {
         this.studentId = studentId;
     }
 
-    public String getFullName() {
-        return fullName;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     public String getEmail() {
@@ -31,11 +39,4 @@ public class EditProfileDTO {
         this.email = email;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
-    }
 }

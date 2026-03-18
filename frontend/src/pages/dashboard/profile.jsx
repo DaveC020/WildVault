@@ -7,18 +7,25 @@ import {
   getAuthToken,
   getInitials,
   uploadUserProfilePhoto,
+  validateProfileImageFile,
   updateUserPassword,
   updateUserProfile,
 } from '../../api/authApi';
 import './profile.css';
 
 export function ProfilePage({ user = {}, onLogout, onProfileUpdated }) {
+  const resolvedFirstName = user.firstName || '';
+  const resolvedLastName = user.lastName || '';
+  const resolvedFullName = [resolvedFirstName, resolvedLastName].filter(Boolean).join(' ').trim() || user.fullName || user.name || user.username || user.email || 'User';
+
   const currentUser = {
     id: user.id || null,
     studentId: user.studentId || null,
+    department: user.department || '',
     username: user.username || user.email || '',
-    fullName: user.fullName || user.name || user.username || user.email || 'User',
-    displayName: user.displayName || user.fullName || user.name || user.username || user.email || 'User',
+    firstName: resolvedFirstName,
+    lastName: resolvedLastName,
+    fullName: resolvedFullName,
     email: user.email || 'alis.go@cit.edu',
     avatarUrl: user.avatarUrl || null,
   };
@@ -30,11 +37,14 @@ export function ProfilePage({ user = {}, onLogout, onProfileUpdated }) {
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState('');
   const [displayedAvatarUrl, setDisplayedAvatarUrl] = useState(user.avatarUrl || null);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [formState, setFormState] = useState({
     studentId: '',
-    fullName: '',
+    department: '',
+    firstName: '',
+    lastName: '',
     email: '',
-    displayName: '',
+    currentPassword: '',
     newPassword: '',
     confirmNewPassword: '',
   });
@@ -42,16 +52,38 @@ export function ProfilePage({ user = {}, onLogout, onProfileUpdated }) {
   // Update displayed avatar when user prop changes
   useEffect(() => {
     setDisplayedAvatarUrl(user.avatarUrl || null);
+    setAvatarLoadFailed(false);
   }, [user.avatarUrl]);
+
+  const resolveAvatarSrc = (source) => {
+    if (!source || typeof source !== 'string') {
+      return null;
+    }
+
+    const trimmed = source.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
+      return trimmed;
+    }
+
+    return `${trimmed}${trimmed.includes('?') ? '&' : '?'}t=${Date.now()}`;
+  };
+
+  const avatarImageSrc = resolveAvatarSrc(displayedAvatarUrl);
 
   const openModal = () => {
     setSaveError('');
     setSaveSuccess('');
     setFormState({
       studentId: currentUser.studentId ? String(currentUser.studentId) : 'N/A',
-      fullName: currentUser.fullName,
+      department: currentUser.department || 'N/A',
+      firstName: currentUser.firstName,
+      lastName: currentUser.lastName,
       email: currentUser.email,
-      displayName: currentUser.displayName || '',
+      currentPassword: '',
       newPassword: '',
       confirmNewPassword: '',
     });
@@ -66,10 +98,10 @@ export function ProfilePage({ user = {}, onLogout, onProfileUpdated }) {
   };
 
   const isFormDirty = useMemo(() => {
-    const displayNameChanged = formState.displayName.trim() !== (currentUser.displayName || '').trim();
-    const passwordEntered = formState.newPassword.trim() || formState.confirmNewPassword.trim();
-    return displayNameChanged || Boolean(passwordEntered);
-  }, [currentUser.displayName, formState.confirmNewPassword, formState.displayName, formState.newPassword]);
+    const emailChanged = formState.email.trim().toLowerCase() !== (currentUser.email || '').trim().toLowerCase();
+    const passwordEntered = formState.currentPassword.trim() || formState.newPassword.trim() || formState.confirmNewPassword.trim();
+    return emailChanged || Boolean(passwordEntered);
+  }, [currentUser.email, formState.confirmNewPassword, formState.currentPassword, formState.email, formState.newPassword]);
 
   const handleFieldChange = (event) => {
     const { name, value } = event.target;
@@ -90,6 +122,13 @@ export function ProfilePage({ user = {}, onLogout, onProfileUpdated }) {
       return;
     }
 
+    const validation = validateProfileImageFile(file);
+    if (!validation.valid) {
+      setSaveError(validation.message);
+      setSaveSuccess('');
+      return;
+    }
+
     const token = getAuthToken();
     if (!token) {
       setSaveError('Session expired. Please log in again.');
@@ -101,16 +140,18 @@ export function ProfilePage({ user = {}, onLogout, onProfileUpdated }) {
     setIsUploadingPhoto(true);
 
     try {
-      await uploadUserProfilePhoto(token, file);
+      const uploadResult = await uploadUserProfilePhoto(token, file);
       const profile = await fetchUserProfile(token);
-      const profilePhoto = await fetchUserProfilePhoto(token).catch(() => null);
+      const profilePhoto = await fetchUserProfilePhoto(token, { forceRefresh: true }).catch(() => null);
+      const localPreviewUrl = URL.createObjectURL(file);
       
       const updatedFields = {
-        photoUrl: profilePhoto || profile?.photoUrl || null,
+        photoUrl: uploadResult?.fileUrl || profilePhoto || profile?.photoUrl || localPreviewUrl,
       };
       
       // Update local state immediately to show new photo
       setDisplayedAvatarUrl(updatedFields.photoUrl);
+      setAvatarLoadFailed(false);
       
       // Notify parent to update app state
       onProfileUpdated?.(updatedFields);
@@ -134,17 +175,26 @@ export function ProfilePage({ user = {}, onLogout, onProfileUpdated }) {
       return;
     }
 
-    const nextDisplayName = formState.displayName.trim();
-    const currentDisplayName = (currentUser.displayName || '').trim();
-    const displayNameChanged = nextDisplayName !== currentDisplayName;
-    const passwordProvided = Boolean(formState.newPassword.trim() || formState.confirmNewPassword.trim());
+    const nextEmail = formState.email.trim();
+    const currentEmail = (currentUser.email || '').trim();
+    const emailChanged = nextEmail.toLowerCase() !== currentEmail.toLowerCase();
+    const hasCurrentPassword = Boolean(formState.currentPassword.trim());
+    const hasNewPassword = Boolean(formState.newPassword.trim());
+    const hasConfirmPassword = Boolean(formState.confirmNewPassword.trim());
+    const anyPasswordFieldProvided = hasCurrentPassword || hasNewPassword || hasConfirmPassword;
+    const shouldUpdatePassword = hasCurrentPassword && hasNewPassword && hasConfirmPassword;
 
-    if (!nextDisplayName) {
-      setSaveError('Display name is required.');
+    if (!nextEmail) {
+      setSaveError('Email is required.');
       return;
     }
 
-    if (passwordProvided && formState.newPassword !== formState.confirmNewPassword) {
+    if (anyPasswordFieldProvided && !shouldUpdatePassword) {
+      setSaveError('To change password, fill in Current Password, New Password, and Confirm New Password.');
+      return;
+    }
+
+    if (shouldUpdatePassword && formState.newPassword !== formState.confirmNewPassword) {
       setSaveError('New password and confirm password do not match.');
       return;
     }
@@ -156,32 +206,39 @@ export function ProfilePage({ user = {}, onLogout, onProfileUpdated }) {
 
     setIsSaving(true);
     try {
-      let updatedDisplayName = currentDisplayName;
+      let updatedEmail = currentEmail;
 
-      if (passwordProvided) {
+      if (shouldUpdatePassword) {
         await updateUserPassword(token, {
+          currentPassword: formState.currentPassword,
           newPassword: formState.newPassword,
           confirmPassword: formState.confirmNewPassword,
         });
       }
 
-      if (displayNameChanged) {
+      if (emailChanged) {
         const profileResult = await updateUserProfile(token, {
-          displayName: nextDisplayName,
+          firstName: currentUser.firstName,
+          lastName: currentUser.lastName,
+          email: nextEmail,
+          studentId: currentUser.studentId,
         });
-        updatedDisplayName = profileResult?.user?.displayName || nextDisplayName;
+        updatedEmail = profileResult?.user?.email || nextEmail;
       }
 
       onProfileUpdated?.({
-        displayName: updatedDisplayName,
+        firstName: currentUser.firstName,
+        lastName: currentUser.lastName,
         fullName: currentUser.fullName,
+        email: updatedEmail,
         studentId: currentUser.studentId,
       });
 
       setSaveSuccess('Credentials updated successfully.');
       setFormState((prev) => ({
         ...prev,
-        displayName: updatedDisplayName,
+        email: updatedEmail,
+        currentPassword: '',
         newPassword: '',
         confirmNewPassword: '',
       }));
@@ -200,24 +257,19 @@ export function ProfilePage({ user = {}, onLogout, onProfileUpdated }) {
         </div>
         
         <div className="profile-avatar-wrapper">
-            {displayedAvatarUrl ? (
-              <img src={displayedAvatarUrl} alt="Avatar" className="profile-avatar-img" />
+            {avatarImageSrc && !avatarLoadFailed ? (
+              <img
+                src={avatarImageSrc}
+                alt="Avatar"
+                className="profile-avatar-img"
+                onError={() => setAvatarLoadFailed(true)}
+              />
             ) : (
               <span className="profile-avatar-fallback">
                 {avatarInitials}
               </span>
             )}
         </div>
-
-        <button
-          type="button"
-          className="profile-change-photo-btn"
-          onClick={handleChangeProfileClick}
-          disabled={isUploadingPhoto}
-        >
-          <Camera size={16} />
-          {isUploadingPhoto ? 'Uploading...' : 'Change Profile'}
-        </button>
 
         <input
           ref={fileInputRef}
@@ -229,7 +281,7 @@ export function ProfilePage({ user = {}, onLogout, onProfileUpdated }) {
 
         <div className="profile-header-content">
           <div className="profile-info">
-            <h1 className="profile-name">{currentUser.displayName}</h1>
+            <h1 className="profile-name">{currentUser.fullName}</h1>
             <div className="profile-badges">
               <div className="profile-badge">
                 <Mail size={16} className="profile-badge-icon" />
@@ -245,6 +297,15 @@ export function ProfilePage({ user = {}, onLogout, onProfileUpdated }) {
           </div>
           
           <div className="profile-actions">
+            <button
+              type="button"
+              className="profile-change-photo-btn"
+              onClick={handleChangeProfileClick}
+              disabled={isUploadingPhoto}
+            >
+              <Camera size={16} />
+              {isUploadingPhoto ? 'Uploading...' : 'Change Profile'}
+            </button>
             <button onClick={openModal} className="profile-btn outline" type="button">
               <Edit size={16} />
               Modify Profile
@@ -262,18 +323,26 @@ export function ProfilePage({ user = {}, onLogout, onProfileUpdated }) {
           <form className="profile-modal-card" onSubmit={handleSave}>
             <div className="profile-modal-grid">
               <label className="profile-modal-field">
-                <span className="profile-modal-label">Full Legal Name</span>
+                <span className="profile-modal-label">First Name</span>
                 <div className="profile-modal-input-wrap disabled">
                   <UserRound size={16} />
-                  <input name="fullName" value={formState.fullName} disabled readOnly />
+                  <input name="firstName" value={formState.firstName} disabled readOnly />
                 </div>
               </label>
 
               <label className="profile-modal-field">
-                <span className="profile-modal-label">Institutional Email</span>
+                <span className="profile-modal-label">Last Name</span>
                 <div className="profile-modal-input-wrap disabled">
-                  <Mail size={16} />
-                  <input name="email" value={formState.email} disabled readOnly />
+                  <UserRound size={16} />
+                  <input name="lastName" value={formState.lastName} disabled readOnly />
+                </div>
+              </label>
+
+              <label className="profile-modal-field">
+                <span className="profile-modal-label">Department</span>
+                <div className="profile-modal-input-wrap disabled">
+                  <Hash size={16} />
+                  <input name="department" value={formState.department} disabled readOnly />
                 </div>
               </label>
 
@@ -286,15 +355,31 @@ export function ProfilePage({ user = {}, onLogout, onProfileUpdated }) {
               </label>
 
               <label className="profile-modal-field">
-                <span className="profile-modal-label">Display Name</span>
+                <span className="profile-modal-label">Email</span>
                 <div className="profile-modal-input-wrap">
-                  <UserRound size={16} />
+                  <Mail size={16} />
                   <input
-                    name="displayName"
-                    value={formState.displayName}
+                    type="email"
+                    name="email"
+                    value={formState.email}
                     onChange={handleFieldChange}
                     disabled={isSaving}
                     required
+                  />
+                </div>
+              </label>
+
+              <label className="profile-modal-field">
+                <span className="profile-modal-label">Current Password</span>
+                <div className="profile-modal-input-wrap">
+                  <KeyRound size={16} />
+                  <input
+                    type="password"
+                    name="currentPassword"
+                    value={formState.currentPassword}
+                    onChange={handleFieldChange}
+                    disabled={isSaving}
+                    placeholder="Enter current password"
                   />
                 </div>
               </label>
@@ -315,7 +400,7 @@ export function ProfilePage({ user = {}, onLogout, onProfileUpdated }) {
               </label>
 
               <label className="profile-modal-field">
-                <span className="profile-modal-label">Confirm New Password</span>
+                <span className="profile-modal-label">Confirm Password</span>
                 <div className="profile-modal-input-wrap">
                   <KeyRound size={16} />
                   <input
@@ -353,9 +438,11 @@ ProfilePage.propTypes = {
   user: PropTypes.shape({
     id: PropTypes.number,
     studentId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    department: PropTypes.string,
     username: PropTypes.string,
+    firstName: PropTypes.string,
+    lastName: PropTypes.string,
     fullName: PropTypes.string,
-    displayName: PropTypes.string,
     name: PropTypes.string,
     email: PropTypes.string,
     avatarUrl: PropTypes.string,

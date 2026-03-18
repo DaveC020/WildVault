@@ -28,12 +28,32 @@ public class ProfileService {
         dto.setId(entity.getId());
         dto.setStudentId(entity.getStudentId());
         dto.setUsername(entity.getUsername());
-        dto.setDisplayName(entity.getDisplayName());
+        dto.setFirstName(entity.getFirstName());
+        dto.setLastName(entity.getLastName());
         dto.setEmail(entity.getEmail());
-        dto.setFullName(entity.getFullName());
+        dto.setFullName(buildFullName(entity));
         dto.setPhotoUrl(buildPhotoDataUrl(entity));
         dto.setCreatedAt(entity.getCreatedAt());
         return dto;
+    }
+
+    private String buildFullName(ProfileEntity entity) {
+        String firstName = entity.getFirstName() == null ? "" : entity.getFirstName().trim();
+        String lastName = entity.getLastName() == null ? "" : entity.getLastName().trim();
+
+        if (firstName.isBlank() && lastName.isBlank()) {
+            return entity.getUsername();
+        }
+
+        if (firstName.isBlank()) {
+            return lastName;
+        }
+
+        if (lastName.isBlank()) {
+            return firstName;
+        }
+
+        return firstName + " " + lastName;
     }
 
     private String buildPhotoDataUrl(ProfileEntity entity) {

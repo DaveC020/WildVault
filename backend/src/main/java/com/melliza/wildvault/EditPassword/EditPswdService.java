@@ -25,16 +25,19 @@ public class EditPswdService {
             return Map.of(STATUS_KEY, 401, MESSAGE_KEY, "Invalid or missing token");
         }
 
-        if (request == null || request.getNewPassword() == null || request.getConfirmPassword() == null) {
-            return Map.of(STATUS_KEY, 400, MESSAGE_KEY, "newPassword and confirmPassword are required");
+        if (request == null
+                || request.getCurrentPassword() == null
+                || request.getNewPassword() == null
+                || request.getConfirmPassword() == null) {
+            return Map.of(STATUS_KEY, 400, MESSAGE_KEY, "currentPassword, newPassword, and confirmPassword are required");
         }
 
         String currentPassword = request.getCurrentPassword() == null ? "" : request.getCurrentPassword().trim();
         String newPassword = request.getNewPassword().trim();
         String confirmPassword = request.getConfirmPassword().trim();
 
-        if (newPassword.isBlank() || confirmPassword.isBlank()) {
-            return Map.of(STATUS_KEY, 400, MESSAGE_KEY, "newPassword and confirmPassword must not be empty");
+        if (currentPassword.isBlank() || newPassword.isBlank() || confirmPassword.isBlank()) {
+            return Map.of(STATUS_KEY, 400, MESSAGE_KEY, "currentPassword, newPassword, and confirmPassword must not be empty");
         }
 
         if (!newPassword.equals(confirmPassword)) {
@@ -47,7 +50,7 @@ public class EditPswdService {
         }
 
         RegisterEntity user = userOptional.get();
-        if (!currentPassword.isBlank() && !pswdEncoder.matches(currentPassword, user.getPassword())) {
+        if (!pswdEncoder.matches(currentPassword, user.getPassword())) {
             return Map.of(STATUS_KEY, 400, MESSAGE_KEY, "Current password is incorrect");
         }
 

@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Mail, Lock, User, ShieldCheck, Building2, GraduationCap, Eye, EyeOff } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { Logo } from '../../components/Logo';
+import { buildFullName, fetchUserProfile, fetchUserProfilePhoto, loginUser, setAuthToken } from '../../api/authApi';
 import './register.css';
 
 export function Register({ onRegister, onSwitchToLogin }) {
   const [formData, setFormData] = useState({
-    fullName: '',
-    displayName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -41,22 +42,56 @@ export function Register({ onRegister, onSwitchToLogin }) {
           email: formData.email,
           password: formData.password,
           studentId: formData.studentId,
-          fullName: formData.fullName,
-          displayName: formData.displayName,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
         }),
       });
 
       if (response.ok) {
         const data = await response.json().catch(() => ({}));
+        let resolvedUser = {
+          id: data?.id || null,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          fullName: buildFullName({ firstName: formData.firstName, lastName: formData.lastName }, formData.email),
+          username: formData.email,
+          studentId: formData.studentId || data?.studentId || null,
+          department: formData.department || '',
+          email: formData.email,
+          photoUrl: null,
+        };
+
+        const auth = await loginUser({
+          username: formData.email,
+          password: formData.password,
+        });
+
+        setAuthToken(auth.token);
+
+        try {
+          const profile = await fetchUserProfile(auth.token);
+          const profilePhoto = await fetchUserProfilePhoto(auth.token).catch(() => null);
+          const resolvedFullName = buildFullName(profile, profile?.username || formData.email);
+
+          resolvedUser = {
+            id: profile?.id || data?.id || null,
+            firstName: profile?.firstName || formData.firstName,
+            lastName: profile?.lastName || formData.lastName,
+            fullName: resolvedFullName,
+            username: profile?.username || formData.email,
+            studentId: profile?.studentId || formData.studentId || data?.studentId || null,
+            department: profile?.department || formData.department || '',
+            email: profile?.email || formData.email,
+            photoUrl: profilePhoto || profile?.photoUrl || null,
+          };
+        } catch {
+          // Keep registration values if profile endpoint is temporarily unavailable.
+        }
+
         onRegister({
+          token: auth.token,
           user: {
-            id: data?.id || null,
-            fullName: formData.fullName,
-            displayName: formData.displayName,
-            username: formData.email,
-            studentId: formData.studentId || data?.studentId || null,
-            email: formData.email,
-            photoUrl: null,
+            ...resolvedUser,
           },
         });
       } else {
@@ -103,40 +138,40 @@ export function Register({ onRegister, onSwitchToLogin }) {
             {error && <div className="register-error-message">{error}</div>}
 
             <div className="register-form-fields">
-              {/* Full Name */}
+              {/* First Name */}
               <div className="register-form-group">
-                <label className="register-label" htmlFor="register-full-name">Full Name</label>
+                <label className="register-label" htmlFor="register-first-name">First Name</label>
                 <div className="register-input-wrapper">
                   <div className="register-icon">
                     <User size={18} />
                   </div>
                   <input 
-                    id="register-full-name"
+                    id="register-first-name"
                     type="text" 
-                    name="fullName"
-                    value={formData.fullName}
+                    name="firstName"
+                    value={formData.firstName}
                     onChange={handleInputChange}
-                    placeholder="Enter legal name" 
+                    placeholder="Enter first name" 
                     required
                     className="register-input"
                   />
                 </div>
               </div>
 
-              {/* Display Name */}
+              {/* Last Name */}
               <div className="register-form-group">
-                <label className="register-label" htmlFor="register-display-name">Display Name</label>
+                <label className="register-label" htmlFor="register-last-name">Last Name</label>
                 <div className="register-input-wrapper">
                   <div className="register-icon">
                     <User size={18} />
                   </div>
                   <input
-                    id="register-display-name"
+                    id="register-last-name"
                     type="text"
-                    name="displayName"
-                    value={formData.displayName}
+                    name="lastName"
+                    value={formData.lastName}
                     onChange={handleInputChange}
-                    placeholder="Enter display name"
+                    placeholder="Enter last name"
                     required
                     className="register-input"
                   />

@@ -92,7 +92,7 @@ export function Dashboard({ onLogout, currentUser, onProfileUpdated }) {
       };
     }
 
-    fetchUserProfilePhoto(token)
+    fetchUserProfilePhoto(token, { forceRefresh: true })
       .then((photoUrl) => {
         if (!isActive || !photoUrl) {
           return;
@@ -109,7 +109,6 @@ export function Dashboard({ onLogout, currentUser, onProfileUpdated }) {
   }, [sessionUser?.photoUrl]);
 
   const fullName = sessionUser?.fullName || sessionUser?.name || sessionUser?.username || sessionUser?.email || 'User';
-  const displayName = sessionUser?.displayName || fullName;
   const displayEmail = sessionUser?.email || '';
   const initials = getInitials(fullName);
 
@@ -126,7 +125,7 @@ export function Dashboard({ onLogout, currentUser, onProfileUpdated }) {
     const newRequest = {
       id: 'R' + Math.random().toString(36).substring(2, 11),
       itemName: item.name,
-      requester: displayName,
+      requester: fullName,
       date: new Date().toISOString().split('T')[0],
       status: 'pending'
     };
@@ -168,9 +167,11 @@ export function Dashboard({ onLogout, currentUser, onProfileUpdated }) {
            user={{
              id: sessionUser?.id || null,
              studentId: sessionUser?.studentId || null,
+             department: sessionUser?.department || '',
              username: sessionUser?.username || displayEmail,
+             firstName: sessionUser?.firstName || '',
+             lastName: sessionUser?.lastName || '',
              fullName,
-             displayName,
              email: displayEmail,
              avatarUrl: sessionUser?.photoUrl || null,
            }}
@@ -230,7 +231,7 @@ export function Dashboard({ onLogout, currentUser, onProfileUpdated }) {
                   )}
                 </div>
               <div>
-                <p className="dash-profile-name">{displayName}</p>
+                <p className="dash-profile-name">{fullName}</p>
                 {sessionUser?.studentId && (
                   <p className="dash-profile-role">{sessionUser.studentId}</p>
                 )}

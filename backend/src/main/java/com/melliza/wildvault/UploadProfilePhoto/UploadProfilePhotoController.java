@@ -1,6 +1,5 @@
 package com.melliza.wildvault.UploadProfilePhoto;
 
-import com.melliza.wildvault.Profile.ProfileEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -55,12 +54,12 @@ public class UploadProfilePhotoController {
             return ResponseEntity.status(401).build();
         }
 
-        Optional<ProfileEntity> profileOptional = uploadProfilePhotoService.getProfilePhotoByUsername(username);
+        Optional<UserProfileEntity> profileOptional = uploadProfilePhotoService.getProfilePhotoByUsername(username);
         if (profileOptional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
-        ProfileEntity profile = profileOptional.get();
+        UserProfileEntity profile = profileOptional.get();
         String contentType = profile.getPhotoContentType();
         MediaType mediaType;
         try {

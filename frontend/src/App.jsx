@@ -3,7 +3,7 @@ import { LandingPage } from './pages/landing/landing.jsx';
 import { Login } from './pages/login/login.jsx';
 import { Register } from './pages/register/register.jsx';
 import { Dashboard } from './pages/dashboard/dashboard.jsx';
-import { clearAuthToken, getAuthToken, fetchUserProfile, fetchUserProfilePhoto, buildDisplayName } from './api/authApi';
+import { clearAuthToken, getAuthToken, fetchUserProfile, fetchUserProfilePhoto, buildFullName, decodeJwtSubject } from './api/authApi';
 import './App.css';
 
 export default function App() {
@@ -22,16 +22,16 @@ export default function App() {
       }
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    globalThis.addEventListener('popstate', handlePopState);
+    return () => globalThis.removeEventListener('popstate', handlePopState);
   }, []);
 
   // Push state to browser history when view changes
   const updateViewWithHistory = (view, user = null) => {
-    window.history.pushState(
+    globalThis.history.pushState(
       { view, user },
       '',
-      window.location.pathname
+      globalThis.location.pathname
     );
     setCurrentView(view);
     setCurrentUser(user);
@@ -47,33 +47,44 @@ export default function App() {
       }
 
       try {
-        const profile = await fetchUserProfile(token);
-        const profilePhoto = await fetchUserProfilePhoto(token).catch(() => null);
-        const resolvedDisplayName = buildDisplayName(profile, profile?.username || profile?.email);
-        const resolvedFullName = profile?.fullName?.trim()
-          ? profile.fullName.trim()
-          : buildDisplayName(null, profile?.username || profile?.email);
+        let profile = null;
+        try {
+          profile = await fetchUserProfile(token);
+        } catch (error) {
+          if (error?.status === 401 || error?.status === 403) {
+            clearAuthToken();
+            return;
+          }
+        }
+
+        const profilePhoto = await fetchUserProfilePhoto(token, { forceRefresh: true }).catch(() => null);
+        const tokenSubject = decodeJwtSubject(token);
+        const identity = profile?.username || profile?.email || tokenSubject || 'User';
+        const resolvedFullName = buildFullName(profile, identity);
 
         const userData = {
           id: profile?.id || null,
           studentId: profile?.studentId || null,
-          username: profile?.username || profile?.email || 'User',
+          department: profile?.department || '',
+          username: identity,
+          firstName: profile?.firstName || '',
+          lastName: profile?.lastName || '',
           fullName: resolvedFullName,
-          displayName: resolvedDisplayName,
-          email: profile?.email || 'User',
-          photoUrl: profilePhoto || null,
+          email: profile?.email || identity,
+          photoUrl: profilePhoto || profile?.photoUrl || null,
         };
 
         setCurrentUser(userData);
         setCurrentView('dashboard');
         // Initialize history state
-        window.history.replaceState(
+        globalThis.history.replaceState(
           { view: 'dashboard', user: userData },
           ''
         );
       } catch (error) {
-        // Token invalid or expired
-        clearAuthToken();
+        if (error?.status === 401 || error?.status === 403) {
+          clearAuthToken();
+        }
         setIsInitializing(false);
       }
     };
@@ -110,6 +121,13 @@ export default function App() {
   const handleProfileUpdated = (updatedFields) => {
     setCurrentUser((prev) => prev ? { ...prev, ...updatedFields } : prev);
   };
+
+  useEffect(() => {
+    if (currentView === 'dashboard' && !currentUser) {
+      setCurrentView('login');
+      globalThis.history.replaceState({ view: 'login', user: null }, '', globalThis.location.pathname);
+    }
+  }, [currentView, currentUser]);
 
   if (isInitializing) {
     return (
