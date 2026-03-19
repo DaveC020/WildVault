@@ -1,6 +1,7 @@
 package com.melliza.wildvault.EditPassword;
 
 import com.melliza.wildvault.Register.RegisterEntity;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -44,18 +45,40 @@ public class EditPswdService {
             return Map.of(STATUS_KEY, 400, MESSAGE_KEY, "newPassword and confirmPassword do not match");
         }
 
-        Optional<RegisterEntity> userOptional = profileRepository.findByUsername(username);
+        Optional<RegisterEntity> userOptional;
+        try {
+            userOptional = profileRepository.findByUsername(username);
+        } catch (DataAccessException ex) {
+            return Map.of(STATUS_KEY, 500, MESSAGE_KEY, "Unable to load user due to a database error");
+        }
+
         if (userOptional.isEmpty()) {
             return Map.of(STATUS_KEY, 404, MESSAGE_KEY, "User not found");
         }
 
         RegisterEntity user = userOptional.get();
-        if (!pswdEncoder.matches(currentPassword, user.getPassword())) {
+        String storedPassword = user.getPassword();
+        if (storedPassword == null || storedPassword.isBlank()) {
+            return Map.of(STATUS_KEY, 400, MESSAGE_KEY, "No password is set for this account");
+        }
+
+        boolean passwordMatched;
+        try {
+            passwordMatched = pswdEncoder.matches(currentPassword, storedPassword);
+        } catch (IllegalArgumentException ex) {
+            return Map.of(STATUS_KEY, 400, MESSAGE_KEY, "Stored password format is invalid. Please reset your password.");
+        }
+
+        if (!passwordMatched) {
             return Map.of(STATUS_KEY, 400, MESSAGE_KEY, "Current password is incorrect");
         }
 
         user.setPassword(pswdEncoder.encode(newPassword));
-        profileRepository.save(user);
+        try {
+            profileRepository.save(user);
+        } catch (DataAccessException ex) {
+            return Map.of(STATUS_KEY, 500, MESSAGE_KEY, "Unable to update password due to a database error");
+        }
 
         return Map.of(STATUS_KEY, 200, MESSAGE_KEY, "Password updated successfully");
     }

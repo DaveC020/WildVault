@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface EditProfileRepository extends JpaRepository<ProfileEntity, Long> {
     Optional<ProfileEntity> findByUsername(String username);
     Optional<ProfileEntity> findByEmail(String email);
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
 }

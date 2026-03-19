@@ -1,6 +1,7 @@
 package com.melliza.wildvault.Profile;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Base64;
 import java.util.Optional;
@@ -14,6 +15,7 @@ public class ProfileService {
         this.profileRepository = profileRepository;
     }
 
+    @Transactional(readOnly = true)
     public ProfileDTO getProfileByUsername(String username) {
         if (username == null || username.isBlank()) {
             return null;

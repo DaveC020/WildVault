@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.melliza.wildvault.Profile.ProfileEntity;
 import java.util.Optional;
 
 @RestController
@@ -54,12 +55,12 @@ public class UploadProfilePhotoController {
             return ResponseEntity.status(401).build();
         }
 
-        Optional<UserProfileEntity> profileOptional = uploadProfilePhotoService.getProfilePhotoByUsername(username);
+        Optional<ProfileEntity> profileOptional = uploadProfilePhotoService.getProfilePhotoByUsername(username);
         if (profileOptional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
-        UserProfileEntity profile = profileOptional.get();
+        ProfileEntity profile = profileOptional.get();
         String contentType = profile.getPhotoContentType();
         MediaType mediaType;
         try {

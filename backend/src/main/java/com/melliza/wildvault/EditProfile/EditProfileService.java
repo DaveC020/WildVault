@@ -2,6 +2,8 @@ package com.melliza.wildvault.EditProfile;
 
 import org.springframework.stereotype.Service;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.melliza.wildvault.Profile.ProfileEntity;
 import java.util.LinkedHashMap;
@@ -17,6 +19,7 @@ public class EditProfileService {
         this.profileRepository = profileRepository;
     }
 
+    @Transactional
     public Map<String, Object> updateProfile(String username, EditProfileDTO request) {
         if (username == null || username.isBlank()) {
             return Map.of("authError", true);
@@ -26,7 +29,13 @@ public class EditProfileService {
             return Map.of("error", "Request body is required");
         }
 
-        Optional<ProfileEntity> userOptional = profileRepository.findByUsername(username);
+        Optional<ProfileEntity> userOptional;
+        try {
+            userOptional = findByUsernameWithRetry(username);
+        } catch (DataAccessException ex) {
+            return Map.of("error", "Unable to load profile due to a database error");
+        }
+
         if (userOptional.isEmpty()) {
             return Map.of("authError", true);
         }
@@ -58,9 +67,12 @@ public class EditProfileService {
             String requestedEmail = request.getEmail().trim();
             String currentEmail = user.getEmail() == null ? "" : user.getEmail().trim();
             if (!requestedEmail.equalsIgnoreCase(currentEmail)) {
-                Optional<ProfileEntity> emailOwner = profileRepository.findByEmail(requestedEmail);
-                if (emailOwner.isPresent() && !emailOwner.get().getId().equals(user.getId())) {
-                    return Map.of("error", "Email already exists");
+                try {
+                    if (existsByEmailIgnoreCaseAndIdNotWithRetry(requestedEmail, user.getId())) {
+                        return Map.of("error", "Email already exists");
+                    }
+                } catch (DataAccessException ex) {
+                    return Map.of("error", "Unable to validate email due to a database error");
                 }
                 user.setEmail(requestedEmail);
             }
@@ -68,9 +80,11 @@ public class EditProfileService {
 
         ProfileEntity savedUser;
         try {
-            savedUser = profileRepository.save(user);
+            savedUser = saveWithRetry(user);
         } catch (DataIntegrityViolationException ex) {
             return Map.of("error", "Email already exists");
+        } catch (DataAccessException ex) {
+            return Map.of("error", "Unable to update profile due to a database error");
         }
 
         Map<String, Object> userPayload = new LinkedHashMap<>();
@@ -85,6 +99,30 @@ public class EditProfileService {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("user", userPayload);
         return response;
+    }
+
+    private Optional<ProfileEntity> findByUsernameWithRetry(String username) {
+        try {
+            return profileRepository.findByUsername(username);
+        } catch (DataAccessException firstAttemptException) {
+            return profileRepository.findByUsername(username);
+        }
+    }
+
+    private boolean existsByEmailIgnoreCaseAndIdNotWithRetry(String email, Long id) {
+        try {
+            return profileRepository.existsByEmailIgnoreCaseAndIdNot(email, id);
+        } catch (DataAccessException firstAttemptException) {
+            return profileRepository.existsByEmailIgnoreCaseAndIdNot(email, id);
+        }
+    }
+
+    private ProfileEntity saveWithRetry(ProfileEntity user) {
+        try {
+            return profileRepository.save(user);
+        } catch (DataAccessException firstAttemptException) {
+            return profileRepository.save(user);
+        }
     }
 
     private String buildFullName(ProfileEntity user) {

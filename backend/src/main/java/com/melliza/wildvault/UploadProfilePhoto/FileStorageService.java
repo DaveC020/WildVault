@@ -1,5 +1,6 @@
 package com.melliza.wildvault.UploadProfilePhoto;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -10,6 +11,12 @@ import java.util.Locale;
 public class FileStorageService {
 
     private static final byte[] EMPTY_BYTES = new byte[0];
+
+    private final String storageBucket;
+
+    public FileStorageService(@Value("${supabase.storage.bucket:avatar}") String storageBucket) {
+        this.storageBucket = storageBucket;
+    }
 
     public byte[] extractAndValidateImageBytes(MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -34,7 +41,16 @@ public class FileStorageService {
         }
     }
 
-    public String buildFileReference(Long userId) {
-        return "/users/profile/photo/" + userId;
+    public String buildApiFileReference() {
+        return "/users/profile/photo";
+    }
+
+    public String buildBucketFileReference(String username, String contentType) {
+        String normalizedUsername = (username == null || username.isBlank()) ? "user" : username.trim().toLowerCase(Locale.ROOT);
+        String extension = "jpg";
+        if ("image/png".equalsIgnoreCase(contentType)) {
+            extension = "png";
+        }
+        return storageBucket + "/" + normalizedUsername + "-avatar." + extension;
     }
 }
