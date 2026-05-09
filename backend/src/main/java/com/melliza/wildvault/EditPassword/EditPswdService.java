@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 public class EditPswdService {
@@ -45,6 +46,15 @@ public class EditPswdService {
             return Map.of(STATUS_KEY, 400, MESSAGE_KEY, "newPassword and confirmPassword do not match");
         }
 
+        if (currentPassword.equals(newPassword)) {
+            return Map.of(STATUS_KEY, 400, MESSAGE_KEY, "New password must be different from current password");
+        }
+
+        String passwordError = validatePassword(newPassword);
+        if (passwordError != null) {
+            return Map.of(STATUS_KEY, 400, MESSAGE_KEY, passwordError);
+        }
+
         Optional<RegisterEntity> userOptional;
         try {
             userOptional = profileRepository.findByUsername(username);
@@ -81,5 +91,24 @@ public class EditPswdService {
         }
 
         return Map.of(STATUS_KEY, 200, MESSAGE_KEY, "Password updated successfully");
+    }
+
+    private String validatePassword(String password) {
+        if (password.length() < 8) {
+            return "Password must be at least 8 characters long";
+        }
+        if (!Pattern.compile("[A-Z]").matcher(password).find()) {
+            return "Password must contain at least 1 uppercase letter";
+        }
+        if (!Pattern.compile("[a-z]").matcher(password).find()) {
+            return "Password must contain at least 1 lowercase letter";
+        }
+        if (!Pattern.compile("\\d").matcher(password).find()) {
+            return "Password must contain at least 1 number";
+        }
+        if (!Pattern.compile("[^A-Za-z0-9]").matcher(password).find()) {
+            return "Password must contain at least 1 special character";
+        }
+        return null;
     }
 }
