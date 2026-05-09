@@ -24,9 +24,9 @@ public class EditPswdController {
     @PutMapping("/profile/password")
     public ResponseEntity<Map<String, String>> editPassword(
             Authentication authentication,
-            @RequestBody EditPswdDTO request
-    ) {
-        Map<String, Object> result = editPswdService.updatePassword(authentication == null ? null : authentication.getName(), request);
+            @RequestBody EditPswdDTO request) {
+        Map<String, Object> result = editPswdService
+                .updatePassword(authentication == null ? null : authentication.getName(), request);
         int status = (int) result.getOrDefault("status", 400);
         String message = (String) result.getOrDefault("message", "Unable to update password");
         return ResponseEntity.status(status).body(Map.of("message", message));

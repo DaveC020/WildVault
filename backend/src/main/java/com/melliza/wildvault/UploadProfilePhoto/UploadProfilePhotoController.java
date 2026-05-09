@@ -29,9 +29,9 @@ public class UploadProfilePhotoController {
     @PostMapping("/profile/photo")
     public ResponseEntity<UploadProfilePhotoDTO> uploadProfilePhoto(
             Authentication authentication,
-            @RequestParam("file") MultipartFile file
-    ) {
-        UploadProfilePhotoDTO response = uploadProfilePhotoService.uploadProfilePhoto(authentication == null ? null : authentication.getName(), file);
+            @RequestParam("file") MultipartFile file) {
+        UploadProfilePhotoDTO response = uploadProfilePhotoService
+                .uploadProfilePhoto(authentication == null ? null : authentication.getName(), file);
 
         if ("Profile photo uploaded successfully".equals(response.getMessage())) {
             return ResponseEntity.ok(response);

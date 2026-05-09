@@ -22,8 +22,7 @@ public class LoginController {
         if (token != null) {
             return ResponseEntity.ok(Map.of(
                     "token", token,
-                    "tokenType", "Bearer"
-            ));
+                    "tokenType", "Bearer"));
         } else {
             return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials"));
         }

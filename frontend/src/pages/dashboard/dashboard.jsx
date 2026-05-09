@@ -511,16 +511,16 @@ function ItemCard({ item, isAdmin, onSelectItem, onDeleteItem }) {
 
 function StatsRow({ stats }) {
   const cards = [
-    ['Total Items', stats.total_items],
-    ['Available', stats.available_items],
-    ['Borrowed', stats.borrowed_items],
-    ['Overdue', stats.overdue_items],
+    ['Total Items', stats.total_items, 'stat-total'],
+    ['Available', stats.available_items, 'stat-available'],
+    ['Borrowed', stats.borrowed_items, 'stat-borrowed'],
+    ['Overdue', stats.overdue_items, 'stat-overdue'],
   ];
 
   return (
     <div className="stats-row">
-      {cards.map(([label, value]) => (
-        <div className="stats-card" key={label}>
+      {cards.map(([label, value, className]) => (
+        <div className={`stats-card ${className}`} key={label}>
           <span>{label}</span>
           <strong>{value ?? 0}</strong>
         </div>

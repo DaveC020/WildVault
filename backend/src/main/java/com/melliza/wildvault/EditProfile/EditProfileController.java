@@ -24,9 +24,9 @@ public class EditProfileController {
     @PutMapping("/profile")
     public ResponseEntity<Object> editProfile(
             Authentication authentication,
-            @RequestBody EditProfileDTO request
-    ) {
-        Map<String, Object> result = editProfileService.updateProfile(authentication == null ? null : authentication.getName(), request);
+            @RequestBody EditProfileDTO request) {
+        Map<String, Object> result = editProfileService
+                .updateProfile(authentication == null ? null : authentication.getName(), request);
         if (result.containsKey("authError")) {
             return ResponseEntity.status(401).body(Map.of("message", "Invalid or missing token"));
         }

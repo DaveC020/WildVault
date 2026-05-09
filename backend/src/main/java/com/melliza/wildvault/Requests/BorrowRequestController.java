@@ -16,31 +16,29 @@ public class BorrowRequestController {
         this.borrowRequestService = borrowRequestService;
     }
 
-    @PostMapping({"/create/{itemId}", "/create/{itemId}/"})
+    @PostMapping({ "/create/{itemId}", "/create/{itemId}/" })
     public ResponseEntity<Map<String, Object>> create(
             @PathVariable Long itemId,
             @RequestBody Map<String, String> data,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
         return borrowRequestService.create(itemId, data, authName(authentication));
     }
 
-    @PostMapping({"/manage/{requestId}/{action}", "/manage/{requestId}/{action}/"})
+    @PostMapping({ "/manage/{requestId}/{action}", "/manage/{requestId}/{action}/" })
     public ResponseEntity<Map<String, Object>> manage(
             @PathVariable Long requestId,
             @PathVariable String action,
             @RequestBody(required = false) Map<String, String> data,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
         return borrowRequestService.manage(requestId, action, data, authName(authentication));
     }
 
-    @GetMapping({"/history", "/history/"})
+    @GetMapping({ "/history", "/history/" })
     public ResponseEntity<Map<String, Object>> history(Authentication authentication) {
         return borrowRequestService.history(authName(authentication));
     }
 
-    @GetMapping({"/calendar", "/calendar/"})
+    @GetMapping({ "/calendar", "/calendar/" })
     public ResponseEntity<Map<String, Object>> calendar(Authentication authentication) {
         return borrowRequestService.calendar(authName(authentication));
     }

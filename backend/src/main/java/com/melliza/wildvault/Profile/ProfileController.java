@@ -22,7 +22,8 @@ public class ProfileController {
 
     @GetMapping("/profile")
     public ResponseEntity<Object> getProfile(Authentication authentication) {
-        ProfileDTO profile = profileService.getProfileByUsername(authentication == null ? null : authentication.getName());
+        ProfileDTO profile = profileService
+                .getProfileByUsername(authentication == null ? null : authentication.getName());
         if (profile != null) {
             return ResponseEntity.ok(profile);
         }

@@ -28,7 +28,7 @@ export function Register({ onRegister, onSwitchToLogin }) {
       setError('Passwords do not match');
       return;
     }
-    
+
     setIsLoading(true);
 
     try {
@@ -116,7 +116,7 @@ export function Register({ onRegister, onSwitchToLogin }) {
     <div className="register-container">
       {/* Decorative Grid Pattern */}
       <div className="register-grid-pattern"></div>
-      
+
       {/* Glow Elements */}
       <div className="register-glow-top"></div>
       <div className="register-glow-bottom"></div>
@@ -145,13 +145,13 @@ export function Register({ onRegister, onSwitchToLogin }) {
                   <div className="register-icon">
                     <User size={18} />
                   </div>
-                  <input 
+                  <input
                     id="register-first-name"
-                    type="text" 
+                    type="text"
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleInputChange}
-                    placeholder="Enter first name" 
+                    placeholder="Enter first name"
                     required
                     className="register-input"
                   />
@@ -185,13 +185,13 @@ export function Register({ onRegister, onSwitchToLogin }) {
                   <div className="register-icon">
                     <Mail size={18} />
                   </div>
-                  <input 
+                  <input
                     id="register-email"
-                    type="email" 
+                    type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    placeholder="name@university.edu" 
+                    placeholder="name@university.edu"
                     required
                     className="register-input"
                   />
@@ -205,13 +205,13 @@ export function Register({ onRegister, onSwitchToLogin }) {
                   <div className="register-icon">
                     <Building2 size={18} />
                   </div>
-                  <input 
+                  <input
                     id="register-department"
-                    type="text" 
+                    type="text"
                     name="department"
                     value={formData.department}
                     onChange={handleInputChange}
-                    placeholder="e.g., CCS Department" 
+                    placeholder="e.g., CCS Department"
                     required
                     className="register-input"
                   />
@@ -225,13 +225,13 @@ export function Register({ onRegister, onSwitchToLogin }) {
                   <div className="register-icon">
                     <GraduationCap size={18} />
                   </div>
-                  <input 
+                  <input
                     id="register-student-id"
-                    type="text" 
+                    type="text"
                     name="studentId"
                     value={formData.studentId}
                     onChange={handleInputChange}
-                    placeholder="Enter student ID" 
+                    placeholder="Enter student ID"
                     required
                     className="register-input"
                   />
@@ -245,20 +245,20 @@ export function Register({ onRegister, onSwitchToLogin }) {
                   <div className="register-icon">
                     <Lock size={18} />
                   </div>
-                  <input 
+                  <input
                     id="register-password"
-                    type={showPassword ? "text" : "password"} 
+                    type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    placeholder="••••••••" 
+                    placeholder="••••••••"
                     required
                     minLength={8}
                     className="register-input"
                     style={{ paddingRight: '2.5rem' }}
                   />
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 0 }}
                   >
@@ -274,20 +274,20 @@ export function Register({ onRegister, onSwitchToLogin }) {
                   <div className="register-icon">
                     <Lock size={18} />
                   </div>
-                  <input 
+                  <input
                     id="register-confirm-password"
-                    type={showConfirmPassword ? "text" : "password"} 
+                    type={showConfirmPassword ? "text" : "password"}
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    placeholder="••••••••" 
+                    placeholder="••••••••"
                     required
                     minLength={8}
                     className="register-input"
                     style={{ paddingRight: '2.5rem' }}
                   />
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 0 }}
                   >
@@ -303,7 +303,7 @@ export function Register({ onRegister, onSwitchToLogin }) {
             </div>
 
             <div className="register-switch-container">
-              <button 
+              <button
                 type="button"
                 onClick={onSwitchToLogin}
                 className="register-switch-btn"
