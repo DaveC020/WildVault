@@ -146,28 +146,28 @@ body {
 
 .nav-login-btn {
   padding: 0.625rem 1.5rem;
-  background-color: var(--slate-900);
+  background: linear-gradient(135deg, var(--slate-900) 0%, #1e293b 100%);
   color: var(--white);
-  border: none;
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 9999px;
-  font-size: 0.625rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.125em;
+  font-size: 0.75rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 @media (min-width: 768px) {
   .nav-login-btn {
     padding: 0.75rem 2rem;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
   }
 }
 
 .nav-login-btn:hover {
-  background-color: var(--primary-600);
+  background: linear-gradient(135deg, var(--primary-600) 0%, #3730a3 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.3);
 }
 
 
@@ -256,17 +256,15 @@ body {
 
 .hero-cta-btn {
   padding: 1.25rem 2.5rem;
-  background-color: var(--slate-900);
+  background: linear-gradient(135deg, var(--slate-900) 0%, #1e293b 100%);
   color: var(--white);
-  border: none;
-  border-radius: 1.5rem;
-  font-weight: 900;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 9999px;
+  font-weight: 700;
   font-size: 1.125rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.2);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 15px 30px -10px rgba(15, 23, 42, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -275,13 +273,15 @@ body {
 
 @media (min-width: 768px) {
   .hero-cta-btn {
-    padding: 1.5rem 3rem;
+    padding: 1.25rem 3rem;
     font-size: 1.25rem;
   }
 }
 
 .hero-cta-btn:hover {
-  background-color: var(--primary-600);
+  background: linear-gradient(135deg, var(--primary-600) 0%, #3730a3 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 20px 40px -10px rgba(79, 70, 229, 0.4);
 }
 
 .hero-arrow {

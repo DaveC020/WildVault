@@ -130,10 +130,7 @@ export function Login({ onLogin, onSwitchToRegister }) {
 
               {/* Password */}
               <div className="login-form-group">
-                <div className="login-label-row">
-                  <label className="login-label" htmlFor="login-password">Secure Passphrase</label>
-                  <button type="button" className="login-reset-btn">Reset</button>
-                </div>
+                <label className="login-label" htmlFor="login-password">Password</label>
                 <div className="login-input-wrapper">
                   <div className="login-icon">
                     <Lock size={18} />

@@ -1,7 +1,30 @@
-const API_BASE_URL = 'http://localhost:8080';
+export const API_BASE_URL = 'http://localhost:8080';
 
 function getToken() {
   return localStorage.getItem('token');
+}
+
+export function getAuthToken() {
+  return getToken();
+}
+
+export function resolveApiUrl(path) {
+  // Return empty string for empty/null paths
+  if (!path || typeof path !== 'string' || path.trim() === '') {
+    return '';
+  }
+
+  // Preserve absolute URLs and data URLs
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:') || path.startsWith('blob:')) {
+    return path;
+  }
+
+  // Prepend API_BASE_URL to relative paths
+  if (path.startsWith('/')) {
+    return `${API_BASE_URL}${path}`;
+  }
+
+  return path;
 }
 
 function authHeaders(extra = {}) {

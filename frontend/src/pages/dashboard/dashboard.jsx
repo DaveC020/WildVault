@@ -426,6 +426,8 @@ export function Dashboard({ onLogout, currentUser, onProfileUpdated }) {
 }
 
 function HomeView({ items, isLoading, error, stats, onAddItem, onSelectItem, isAdmin, onDeleteItem }) {
+  const [layoutMode, setLayoutMode] = useState('grid');
+
   return (
     <div className="dash-view-container">
       <div className="dash-view-header">
@@ -435,9 +437,9 @@ function HomeView({ items, isLoading, error, stats, onAddItem, onSelectItem, isA
         </div>
         <div className="dash-header-actions">
           {isAdmin && <div className="dash-admin-badge"><ShieldAlert size={16} /> Admin Management Active</div>}
-          <button className="dash-icon-btn"><Grid size={20} /></button>
-          <button className="dash-icon-btn-inactive"><ListIcon size={20} /></button>
-          <button className="btn primary" onClick={onAddItem}><Plus size={16} /> Add Item</button>
+          <button className={layoutMode === 'grid' ? 'dash-icon-btn' : 'dash-icon-btn-inactive'} onClick={() => setLayoutMode('grid')}><Grid size={24} /></button>
+          <button className={layoutMode === 'list' ? 'dash-icon-btn' : 'dash-icon-btn-inactive'} onClick={() => setLayoutMode('list')}><ListIcon size={24} /></button>
+          <button className="btn primary" onClick={onAddItem}><Plus size={20} /> Add Item</button>
         </div>
       </div>
 
@@ -447,7 +449,7 @@ function HomeView({ items, isLoading, error, stats, onAddItem, onSelectItem, isA
       {!isLoading && error && <EmptyState title="Unable to Load Items" description={error} />}
       {!isLoading && !error && items.length === 0 && <EmptyState title="No Items Found" description="Add an item or adjust your search/filter." />}
 
-      <div className="dash-grid">
+      <div className={layoutMode === 'grid' ? 'dash-grid' : 'dash-list'}>
         {items.map((item) => (
           <ItemCard
             key={item.id}
