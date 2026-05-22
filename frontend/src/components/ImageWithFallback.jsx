@@ -3,19 +3,19 @@ import { getAuthToken, resolveApiUrl } from '../api/vaultApi';
 
 export function ImageWithFallback({ src, alt, className, ...rest }) {
   const [error, setError] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [resolvedSrc, setResolvedSrc] = useState('');
   const fallbackSrc = 'https://images.unsplash.com/photo-1542744094-3a31f272c490?auto=format&fit=crop&q=80&w=800';
 
   // Reset error state when src changes
   useEffect(() => {
     setError(false);
-    setLoading(false);
     setResolvedSrc('');
   }, [src]);
 
   // Load image with authentication if it's a backend API URL
   useEffect(() => {
+    let objectUrl = '';
+
     if (!src) {
       setResolvedSrc('');
       return;
@@ -25,7 +25,6 @@ export function ImageWithFallback({ src, alt, className, ...rest }) {
 
     if (isBackendImageUrl) {
       // Authenticated image fetch
-      setLoading(true);
       const fullUrl = resolveApiUrl(src);
       const token = getAuthToken();
 
@@ -43,27 +42,23 @@ export function ImageWithFallback({ src, alt, className, ...rest }) {
           if (blob.size === 0) {
             throw new Error('Empty blob');
           }
-          const objectUrl = URL.createObjectURL(blob);
+          objectUrl = URL.createObjectURL(blob);
           setResolvedSrc(objectUrl);
           setError(false);
-          setLoading(false);
         })
         .catch(() => {
           setError(true);
-          setLoading(false);
         });
 
-      // Cleanup object URLs on unmount
       return () => {
-        if (resolvedSrc && resolvedSrc.startsWith('blob:')) {
-          URL.revokeObjectURL(resolvedSrc);
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
         }
       };
     } else {
       // External URL - use as-is
       setResolvedSrc(resolveApiUrl(src));
       setError(false);
-      setLoading(false);
     }
   }, [src]);
 

@@ -1,5 +1,4 @@
-/* eslint-disable react/prop-types */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Search, Filter, User, Package, ChevronLeft, Calendar,
   MessageSquare, Trash2, FileText, Grid, List as ListIcon,
@@ -204,28 +203,24 @@ export function Dashboard({ onLogout, currentUser, onProfileUpdated }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [page, setPage] = useState(0);
-  const [size, setSize] = useState(20);
-  const [itemsTotal, setItemsTotal] = useState(0);
 
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     setIsLoading(true);
     setError('');
     try {
-      const data = await fetchDashboardData({ search: searchQuery, status: statusFilter, page, size });
+      const data = await fetchDashboardData({ search: searchQuery, status: statusFilter });
       setItems((data.items || []).map(normalizeItem));
       setCategories(data.categories || []);
       setStats(data.stats || EMPTY_STATS);
       setIncomingRequests(data.incoming_requests || []);
-      setItemsTotal(data.items_total || 0);
     } catch (err) {
       setError(err.message || 'Unable to load vault data.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [searchQuery, statusFilter]);
 
-  const loadRequests = async () => {
+  const loadRequests = useCallback(async () => {
     try {
       const data = await fetchRequestHistory();
       setRequestHistory({
@@ -236,21 +231,21 @@ export function Dashboard({ onLogout, currentUser, onProfileUpdated }) {
     } catch (err) {
       setError(err.message || 'Unable to load requests.');
     }
-  };
+  }, []);
 
-  const loadCalendar = async () => {
+  const loadCalendar = useCallback(async () => {
     try {
       const data = await fetchCalendarEvents();
       setCalendarEvents(data.events || []);
     } catch (err) {
       setError(err.message || 'Unable to load calendar.');
     }
-  };
+  }, []);
 
-  const refreshAll = async () => {
+  const refreshAll = useCallback(async () => {
     await loadDashboard();
     await Promise.allSettled([loadRequests(), loadCalendar()]);
-  };
+  }, [loadCalendar, loadDashboard, loadRequests]);
 
   useEffect(() => {
     setSessionUser(currentUser || null);
@@ -258,14 +253,7 @@ export function Dashboard({ onLogout, currentUser, onProfileUpdated }) {
 
   useEffect(() => {
     refreshAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    // Re-fetch when filters or pagination change
-    refreshAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, statusFilter, page, size]);
+  }, [refreshAll]);
 
   useEffect(() => {
     if (view === 'requests') {
@@ -274,8 +262,7 @@ export function Dashboard({ onLogout, currentUser, onProfileUpdated }) {
     if (view === 'calendar') {
       loadCalendar();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view]);
+  }, [loadCalendar, loadRequests, view]);
 
   useEffect(() => {
     let isActive = true;
@@ -595,7 +582,14 @@ function ItemCard({ item, isAdmin, onSelectItem, onDeleteItem }) {
   return (
     <div className="item-card">
       {(isAdmin || item.isOwner) && (
-        <button onClick={(event) => { event.stopPropagation(); onDeleteItem(item.rawId || item.id); }} className="item-delete-btn" title="Delete item">
+        <button
+          onClick={(event) => {
+            event.stopPropagation();
+            onDeleteItem(item.rawId || item.id);
+          }}
+          className="item-delete-btn"
+          title="Delete item"
+        >
           <Trash2 size={20} strokeWidth={3} />
         </button>
       )}
@@ -615,13 +609,16 @@ function ItemCard({ item, isAdmin, onSelectItem, onDeleteItem }) {
         <p className="item-desc">{item.description}</p>
         <div className="item-footer">
           <div className="item-owner">
-              <UserAvatar name={item.owner} photoUrl={item.ownerPhotoUrl} />
+            <UserAvatar name={item.owner} photoUrl={item.ownerPhotoUrl} />
             <div className="item-owner-details">
               <h6>Owner</h6>
               <p>{item.owner}</p>
             </div>
           </div>
-          <button onClick={() => onSelectItem(item)} className={`btn ${item.status === 'available' || item.isOwner ? 'primary' : 'disabled'}`}>
+          <button
+            onClick={() => onSelectItem(item)}
+            className={`btn ${item.status === 'available' || item.isOwner ? 'primary' : 'disabled'}`}
+          >
             {getActionLabel()}
           </button>
         </div>
