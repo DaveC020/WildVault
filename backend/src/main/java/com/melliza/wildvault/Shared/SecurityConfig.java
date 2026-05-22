@@ -1,7 +1,9 @@
 package com.melliza.wildvault.Shared;
 
+import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -14,6 +16,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import javax.sql.DataSource;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 @Configuration
@@ -48,6 +53,48 @@ public class SecurityConfig {
     }
 
     @Bean
+    public DataSource dataSource(
+            @Value("${SPRING_DATASOURCE_URL:}") String springDatasourceUrl,
+            @Value("${SPRING_DATASOURCE_USERNAME:}") String springDatasourceUsername,
+            @Value("${SPRING_DATASOURCE_PASSWORD:}") String springDatasourcePassword,
+            @Value("${SUPABASE_JDBC_URL:}") String supabaseJdbcUrl,
+            @Value("${SUPABASE_DB_USER:}") String supabaseDbUser,
+            @Value("${SUPABASE_DB_PASSWORD:}") String supabaseDbPassword,
+            @Value("${DATABASE_URL:}") String databaseUrl
+    ) {
+        String jdbcUrl = firstNonBlank(springDatasourceUrl, supabaseJdbcUrl, databaseUrl);
+        String username = firstNonBlank(springDatasourceUsername, supabaseDbUser);
+        String password = firstNonBlank(springDatasourcePassword, supabaseDbPassword);
+
+        if (jdbcUrl == null || jdbcUrl.isBlank()) {
+            throw new IllegalStateException("No datasource URL configured. Set SPRING_DATASOURCE_URL, SUPABASE_JDBC_URL, or DATABASE_URL.");
+        }
+
+        ParsedDatabaseUrl parsedDatabaseUrl = parseDatabaseUrl(jdbcUrl);
+        jdbcUrl = parsedDatabaseUrl.jdbcUrl();
+
+        if ((username == null || username.isBlank()) && parsedDatabaseUrl.username() != null) {
+            username = parsedDatabaseUrl.username();
+        }
+        if ((password == null || password.isBlank()) && parsedDatabaseUrl.password() != null) {
+            password = parsedDatabaseUrl.password();
+        }
+
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl(jdbcUrl);
+        dataSource.setDriverClassName("org.postgresql.Driver");
+
+        if (username != null && !username.isBlank()) {
+            dataSource.setUsername(username);
+        }
+        if (password != null && !password.isBlank()) {
+            dataSource.setPassword(password);
+        }
+
+        return dataSource;
+    }
+
+    @Bean
     public AuthenticationEntryPoint unauthorizedEntryPoint() {
         return (request, response, authException) -> response.sendError(401, "Unauthorized");
     }
@@ -67,4 +114,57 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private ParsedDatabaseUrl parseDatabaseUrl(String rawUrl) {
+        if (rawUrl.startsWith("jdbc:")) {
+            return new ParsedDatabaseUrl(rawUrl, null, null);
+        }
+
+        if (!rawUrl.startsWith("postgres://") && !rawUrl.startsWith("postgresql://")) {
+            return new ParsedDatabaseUrl(rawUrl, null, null);
+        }
+
+        try {
+            URI uri = new URI(rawUrl);
+            StringBuilder jdbcUrl = new StringBuilder("jdbc:postgresql://")
+                    .append(uri.getHost());
+
+            if (uri.getPort() != -1) {
+                jdbcUrl.append(":").append(uri.getPort());
+            }
+
+            if (uri.getPath() != null && !uri.getPath().isBlank()) {
+                jdbcUrl.append(uri.getPath());
+            }
+
+            if (uri.getQuery() != null && !uri.getQuery().isBlank()) {
+                jdbcUrl.append("?").append(uri.getQuery());
+            }
+
+            String username = null;
+            String password = null;
+            if (uri.getUserInfo() != null && !uri.getUserInfo().isBlank()) {
+                String[] userInfo = uri.getUserInfo().split(":", 2);
+                username = userInfo[0];
+                if (userInfo.length > 1) {
+                    password = userInfo[1];
+                }
+            }
+
+            return new ParsedDatabaseUrl(jdbcUrl.toString(), username, password);
+        } catch (URISyntaxException ex) {
+            throw new IllegalStateException("DATABASE_URL is not a valid URI", ex);
+        }
+    }
+
+    private record ParsedDatabaseUrl(String jdbcUrl, String username, String password) {}
 }
