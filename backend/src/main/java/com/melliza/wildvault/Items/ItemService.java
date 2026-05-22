@@ -13,18 +13,21 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @Service
 public class ItemService {
     public static final List<String> CATEGORY_CHOICES = List.of(
-            "Books", "Electronics", "Tools", "Sports", "School Supplies", "Board Games",
-            "Sports Equipment", "Toys & Games", "Furniture", "Kitchen Appliances",
-            "Cleaning Equipment", "Calculators", "Architecture", "Athletics", "Wellness",
-            "Miscellaneous / Others"
-    );
+            "Academic & School Supplies", "Electronics & Gadgets", "Audio-Visual (AV) Equipment",
+            "Sports & Athletics", "Board Games & Recreation", "Events & Organization Material",
+            "Tools & Maintenance", "Health & Wellness", "Miscellaneous / Others");
 
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of("image/jpeg", "image/png");
 
@@ -35,55 +38,63 @@ public class ItemService {
     public ItemService(
             ItemRepository itemRepository,
             BorrowRequestRepository borrowRequestRepository,
-            RegisterRepository userRepository
-    ) {
+        RegisterRepository userRepository) {
         this.itemRepository = itemRepository;
         this.borrowRequestRepository = borrowRequestRepository;
         this.userRepository = userRepository;
     }
 
     @Transactional(readOnly = true)
-    public ResponseEntity<Map<String, Object>> dashboard(String search, String category, String status, String username) {
+        public ResponseEntity<Map<String, Object>> dashboard(String search, String category, String status,
+            int page, int size, String username) {
         RegisterEntity user = currentUser(username);
         ResponseEntity<Map<String, Object>> denied = requireUser(user);
-        if (denied != null) return denied;
-
-        List<ItemEntity> filtered = filter(search, category, status);
+        if (denied != null)
+            return denied;
+        Page<ItemEntity> pageResult = filterPaged(search, category, status, page, size);
         return ResponseEntity.ok(Map.of(
-                "user", serializeUser(user),
-                "items", filtered.stream().map(item -> serializeItem(item, user)).toList(),
-                "categories", CATEGORY_CHOICES,
-                "stats", Map.of(
-                        "total_items", itemRepository.count(),
-                        "available_items", itemRepository.countByAvailable(true),
-                        "borrowed_items", itemRepository.countByAvailable(false),
-                        "overdue_items", borrowRequestRepository.countByStatusAndDueDateBefore("Approved", LocalDate.now())
-                ),
-                "incoming_requests", borrowRequestRepository
-                        .findByItem_OwnerAndStatusOrderByRequestDateDesc(user, "Pending")
-                        .stream()
-                        .map(request -> RequestSerialization.serializeRequest(request, user))
-                        .toList()
-        ));
+            "user", serializeUser(user),
+            "items", pageResult.getContent().stream().map(item -> serializeItem(item, user)).toList(),
+            "items_total", pageResult.getTotalElements(),
+            "page", pageResult.getNumber(),
+            "size", pageResult.getSize(),
+            "categories", CATEGORY_CHOICES,
+            "stats", Map.of(
+                "total_items", itemRepository.count(),
+                "available_items", itemRepository.countByAvailable(true),
+                "borrowed_items", itemRepository.countByAvailable(false),
+                "overdue_items",
+                borrowRequestRepository.countByStatusAndDueDateBefore("Approved", LocalDate.now())),
+            "incoming_requests", borrowRequestRepository
+                .findByItem_OwnerAndStatusOrderByRequestDateDesc(user, "Pending")
+                .stream()
+                .map(request -> RequestSerialization.serializeRequest(request, user))
+                .toList()));
     }
 
     @Transactional(readOnly = true)
-    public ResponseEntity<Map<String, Object>> collectionGet(String search, String category, String status, String username) {
+    public ResponseEntity<Map<String, Object>> collectionGet(String search, String category, String status,
+            int page, int size, String username) {
         RegisterEntity user = currentUser(username);
         ResponseEntity<Map<String, Object>> denied = requireUser(user);
-        if (denied != null) return denied;
-
+        if (denied != null)
+            return denied;
+        Page<ItemEntity> pageResult = filterPaged(search, category, status, page, size);
         return ResponseEntity.ok(Map.of(
-                "items", filter(search, category, status).stream().map(item -> serializeItem(item, user)).toList(),
-                "categories", CATEGORY_CHOICES
-        ));
+                "items", pageResult.getContent().stream().map(item -> serializeItem(item, user)).toList(),
+                "items_total", pageResult.getTotalElements(),
+                "page", pageResult.getNumber(),
+                "size", pageResult.getSize(),
+                "categories", CATEGORY_CHOICES));
     }
 
     @Transactional
-    public ResponseEntity<Map<String, Object>> create(Map<String, String> data, List<String> categories, MultipartFile imageFile, String username) throws IOException {
+    public ResponseEntity<Map<String, Object>> create(Map<String, String> data, List<String> categories,
+            MultipartFile imageFile, String username) throws IOException {
         RegisterEntity user = currentUser(username);
         ResponseEntity<Map<String, Object>> denied = requireUser(user);
-        if (denied != null) return denied;
+        if (denied != null)
+            return denied;
 
         ItemEntity item = new ItemEntity();
         item.setOwner(user);
@@ -96,49 +107,56 @@ public class ItemService {
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "success", true,
                 "message", "Item added successfully.",
-                "item", serializeItem(item, user)
-        ));
+                "item", serializeItem(item, user)));
     }
 
     @Transactional(readOnly = true)
     public ResponseEntity<Map<String, Object>> mine(String username) {
         RegisterEntity user = currentUser(username);
         ResponseEntity<Map<String, Object>> denied = requireUser(user);
-        if (denied != null) return denied;
+        if (denied != null)
+            return denied;
 
         return ResponseEntity.ok(Map.of(
-                "items", itemRepository.findByOwnerOrderByCreatedAtDesc(user).stream().map(item -> serializeItem(item, user)).toList(),
-                "categories", CATEGORY_CHOICES
-        ));
+                "items",
+                itemRepository.findByOwnerOrderByCreatedAtDesc(user).stream().map(item -> serializeItem(item, user))
+                        .toList(),
+                "categories", CATEGORY_CHOICES));
     }
 
     @Transactional(readOnly = true)
     public ResponseEntity<Map<String, Object>> detail(Long id, String username) {
         RegisterEntity user = currentUser(username);
         ResponseEntity<Map<String, Object>> denied = requireUser(user);
-        if (denied != null) return denied;
+        if (denied != null)
+            return denied;
 
         Optional<ItemEntity> item = itemRepository.findById(id);
         if (item.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("success", false, "error", "Item not found."));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "error", "Item not found."));
         }
         return ResponseEntity.ok(Map.of("item", serializeItem(item.get(), user)));
     }
 
     @Transactional
-    public ResponseEntity<Map<String, Object>> update(Long id, Map<String, String> data, List<String> categories, MultipartFile imageFile, String username) throws IOException {
+    public ResponseEntity<Map<String, Object>> update(Long id, Map<String, String> data, List<String> categories,
+            MultipartFile imageFile, String username) throws IOException {
         RegisterEntity user = currentUser(username);
         ResponseEntity<Map<String, Object>> denied = requireUser(user);
-        if (denied != null) return denied;
+        if (denied != null)
+            return denied;
 
         Optional<ItemEntity> found = itemRepository.findById(id);
         if (found.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("success", false, "error", "Item not found."));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "error", "Item not found."));
         }
 
         ItemEntity item = found.get();
         if (!Objects.equals(item.getOwner().getId(), user.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("success", false, "error", "You cannot modify another user's item."));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "error", "You cannot modify another user's item."));
         }
 
         String validationError = saveFromForm(item, data, categories, imageFile, false);
@@ -150,24 +168,26 @@ public class ItemService {
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Item updated successfully.",
-                "item", serializeItem(item, user)
-        ));
+                "item", serializeItem(item, user)));
     }
 
     @Transactional
     public ResponseEntity<Map<String, Object>> delete(Long id, String username) {
         RegisterEntity user = currentUser(username);
         ResponseEntity<Map<String, Object>> denied = requireUser(user);
-        if (denied != null) return denied;
+        if (denied != null)
+            return denied;
 
         Optional<ItemEntity> found = itemRepository.findById(id);
         if (found.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("success", false, "error", "Item not found."));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("success", false, "error", "Item not found."));
         }
 
         ItemEntity item = found.get();
         if (!Objects.equals(item.getOwner().getId(), user.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("success", false, "error", "You cannot modify another user's item."));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "error", "You cannot modify another user's item."));
         }
 
         itemRepository.delete(item);
@@ -194,9 +214,11 @@ public class ItemService {
         result.put("status", item.isAvailable() ? "available" : "borrowed");
         result.put("created_at", item.getCreatedAt() == null ? null : item.getCreatedAt().toString());
         result.put("phone_number", isBlank(item.getPhoneNumber()) ? "Not provided" : item.getPhoneNumber());
+        result.put("details_json", item.getDetailsJson());
         result.put("owner", serializeUser(item.getOwner()));
         result.put("owner_name", buildFullName(item.getOwner()));
-        result.put("is_owner", viewer != null && item.getOwner() != null && Objects.equals(item.getOwner().getId(), viewer.getId()));
+        result.put("is_owner",
+                viewer != null && item.getOwner() != null && Objects.equals(item.getOwner().getId(), viewer.getId()));
         return result;
     }
 
@@ -209,38 +231,40 @@ public class ItemService {
         result.put("firstName", user.getFirstName());
         result.put("lastName", user.getLastName());
         result.put("fullName", buildFullName(user));
+        result.put("photoUrl", buildPhotoUrl(user));
         return result;
     }
 
-    private List<ItemEntity> filter(String search, String category, String status) {
-        String query = search == null ? "" : search.trim().toLowerCase();
-        String categoryFilter = category == null ? "" : category.trim().toLowerCase();
-        String statusFilter = status == null ? "" : status.trim().toLowerCase();
+    private Page<ItemEntity> filterPaged(String search, String category, String status, int page, int size) {
+        String query = search == null ? null : search.trim().toLowerCase();
+        String categoryFilter = category == null ? null : category.trim().toLowerCase();
+        String statusFilter = status == null ? null : status.trim().toLowerCase();
 
-        return itemRepository.findAll().stream()
-                .sorted(Comparator.comparing(ItemEntity::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed())
-                .filter(item -> query.isBlank()
-                        || contains(item.getName(), query)
-                        || contains(item.getDescription(), query)
-                        || contains(item.getCategory(), query)
-                        || contains(buildFullName(item.getOwner()), query))
-                .filter(item -> categoryFilter.isBlank()
-                        || "all categories".equals(categoryFilter)
-                        || contains(item.getCategory(), categoryFilter))
-                .filter(item -> statusFilter.isBlank()
-                        || "all".equals(statusFilter)
-                        || ("available".equals(statusFilter) && item.isAvailable())
-                        || ("borrowed".equals(statusFilter) && !item.isAvailable()))
-                .collect(Collectors.toList());
+        Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size), Sort.by(Sort.Direction.DESC, "createdAt"));
+        return itemRepository.findFiltered(query, categoryFilter, statusFilter, pageable);
     }
 
-    private String saveFromForm(ItemEntity item, Map<String, String> data, List<String> categories, MultipartFile imageFile, boolean isCreate) throws IOException {
+    private String saveFromForm(ItemEntity item, Map<String, String> data, List<String> categories,
+            MultipartFile imageFile, boolean isCreate) throws IOException {
         String name = value(data, "name", item.getName()).trim();
-        if (name.isBlank()) return "Item name is required.";
-        if (name.length() > 120) return "Item name must not exceed 120 characters.";
+        if (name.isBlank())
+            return "Item name is required.";
+        if (name.length() > 120)
+            return "Item name must not exceed 120 characters.";
         item.setName(name);
 
         item.setDescription(value(data, "description", item.getDescription()).trim());
+
+        String category = value(data, "category", item.getCategory()).trim();
+        if (category.isBlank()) {
+            return "Category is required.";
+        }
+        if (!CATEGORY_CHOICES.contains(category)) {
+            return "Selected category is not supported.";
+        }
+        item.setCategory(category);
+        String detailsJson = value(data, "details_json", item.getDetailsJson()).trim();
+        item.setDetailsJson(detailsJson.isBlank() ? "{}" : detailsJson);
 
         if (categories != null && !categories.isEmpty()) {
             String joined = categories.stream()
@@ -248,8 +272,6 @@ public class ItemService {
                     .map(String::trim)
                     .collect(Collectors.joining(", "));
             item.setCategory(joined);
-        } else if (data != null && data.containsKey("category")) {
-            item.setCategory(value(data, "category", item.getCategory()).trim());
         }
 
         try {
@@ -286,19 +308,22 @@ public class ItemService {
     }
 
     private RegisterEntity currentUser(String username) {
-        if (username == null || username.isBlank()) return null;
+        if (username == null || username.isBlank())
+            return null;
         return userRepository.findByUsername(username).orElse(null);
     }
 
     private ResponseEntity<Map<String, Object>> requireUser(RegisterEntity user) {
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("success", false, "error", "Login required."));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "error", "Login required."));
         }
         return null;
     }
 
     private boolean parseBoolean(String value) {
-        if (value == null) return false;
+        if (value == null)
+            return false;
         return List.of("true", "1", "on", "yes", "available").contains(value.trim().toLowerCase());
     }
 
@@ -343,7 +368,8 @@ public class ItemService {
             return ResponseEntity.notFound().build();
         }
 
-        String contentType = isBlank(item.getImageContentType()) ? MediaType.IMAGE_JPEG_VALUE : item.getImageContentType();
+        String contentType = isBlank(item.getImageContentType()) ? MediaType.IMAGE_JPEG_VALUE
+                : item.getImageContentType();
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
@@ -351,12 +377,33 @@ public class ItemService {
     }
 
     private String buildFullName(RegisterEntity user) {
-        if (user == null) return "Unknown";
+        if (user == null)
+            return "Unknown";
         String firstName = user.getFirstName() == null ? "" : user.getFirstName().trim();
         String lastName = user.getLastName() == null ? "" : user.getLastName().trim();
         String fullName = (firstName + " " + lastName).trim();
-        if (!fullName.isBlank()) return fullName;
-        if (user.getUsername() != null && !user.getUsername().isBlank()) return user.getUsername();
+        if (!fullName.isBlank())
+            return fullName;
+        if (user.getUsername() != null && !user.getUsername().isBlank())
+            return user.getUsername();
         return user.getEmail() == null ? "User" : user.getEmail();
+    }
+
+    private String buildPhotoUrl(RegisterEntity user) {
+        if (user == null) {
+            return null;
+        }
+
+        byte[] photoData = user.getPhotoData();
+        if (photoData != null && photoData.length > 0) {
+            String contentType = isBlank(user.getPhotoContentType()) ? "image/jpeg" : user.getPhotoContentType();
+            return "data:" + contentType + ";base64," + Base64.getEncoder().encodeToString(photoData);
+        }
+
+        if (!isBlank(user.getPhotoUrl())) {
+            return user.getPhotoUrl();
+        }
+
+        return null;
     }
 }

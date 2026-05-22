@@ -23,6 +23,73 @@ import './dashboard.css';
 
 import { ProfilePage } from './profile.jsx';
 
+const CATEGORY_DETAIL_SECTIONS = {
+  'Academic & School Supplies': [
+    { key: 'itemType', label: 'Item type', type: 'text', placeholder: 'e.g., Graphing calculator' },
+    { key: 'subjectRelevance', label: 'Subject relevance', type: 'text', placeholder: 'e.g., Mathematics / Science' },
+    { key: 'edition', label: 'Edition (if applicable)', type: 'text', placeholder: 'e.g., 3rd edition' },
+    { key: 'conditionDetails', label: 'Condition details', type: 'textarea', placeholder: 'Describe wear, markings, or missing parts.' },
+    { key: 'annotationAllowed', label: 'Annotation allowed', type: 'select', options: ['Yes', 'No'] },
+  ],
+  'Electronics & Gadgets': [
+    { key: 'deviceType', label: 'Device type', type: 'text', placeholder: 'e.g., Tablet, laptop, projector' },
+    { key: 'osCompatibility', label: 'OS / compatibility', type: 'text', placeholder: 'e.g., Windows 11 / Android / USB-C' },
+    { key: 'functionalPurpose', label: 'Functional purpose', type: 'textarea', placeholder: 'What is it typically used for?' },
+    { key: 'includedAccessories', label: 'Included accessories', type: 'text', placeholder: 'Chargers, cables, cases, etc.' },
+    { key: 'workingCondition', label: 'Working condition', type: 'select', options: ['Fully working', 'Partially working', 'Needs repair'] },
+  ],
+  'Audio-Visual (AV) Equipment': [
+    { key: 'equipmentType', label: 'Equipment type', type: 'text', placeholder: 'e.g., Microphone, projector, speaker' },
+    { key: 'ioCompatibility', label: 'Input/output compatibility', type: 'text', placeholder: 'e.g., HDMI, XLR, Bluetooth' },
+    { key: 'powerSource', label: 'Power source', type: 'text', placeholder: 'Battery, AC, USB, etc.' },
+    { key: 'testedWorkingStatus', label: 'Tested working status', type: 'select', options: ['Tested working', 'Untested', 'Needs service'] },
+  ],
+  'Sports & Athletics': [
+    { key: 'sportType', label: 'Sport type', type: 'text', placeholder: 'e.g., Basketball, badminton, running' },
+    { key: 'equipmentType', label: 'Equipment type', type: 'text', placeholder: 'e.g., Ball, racket, pad' },
+    { key: 'size', label: 'Size (if applicable)', type: 'text', placeholder: 'e.g., Size 9, medium, 12 oz' },
+    { key: 'safetyCondition', label: 'Safety condition', type: 'textarea', placeholder: 'Any wear, damage, or safety concerns?' },
+  ],
+  'Board Games & Recreation': [
+    { key: 'gameNameType', label: 'Game name/type', type: 'text', placeholder: 'e.g., Chess, Monopoly, card game' },
+    { key: 'completenessStatus', label: 'Completeness status', type: 'text', placeholder: 'Complete, missing pieces, etc.' },
+    { key: 'playerCountRange', label: 'Player count range', type: 'text', placeholder: 'e.g., 2-4 players' },
+  ],
+  'Events & Organization Material': [
+    { key: 'itemType', label: 'Item type', type: 'text', placeholder: 'e.g., Folding table, banner stand' },
+    { key: 'sizeCapacity', label: 'Size/capacity', type: 'text', placeholder: 'Dimensions or maximum capacity' },
+    { key: 'setupRequirement', label: 'Setup requirement', type: 'textarea', placeholder: 'Describe assembly or setup needs.' },
+    { key: 'indoorOutdoorSuitability', label: 'Indoor/outdoor suitability', type: 'select', options: ['Indoor', 'Outdoor', 'Both'] },
+  ],
+  'Tools & Maintenance': [
+    { key: 'toolType', label: 'Tool type', type: 'text', placeholder: 'e.g., Drill, wrench, ladder' },
+    { key: 'powerSource', label: 'Power source', type: 'text', placeholder: 'Manual, battery, electric, etc.' },
+    { key: 'functionUseCase', label: 'Function/use case', type: 'textarea', placeholder: 'What task is it used for?' },
+    { key: 'safetyLevel', label: 'Safety level', type: 'text', placeholder: 'Low, medium, high, or notes' },
+  ],
+  'Health & Wellness': [
+    { key: 'itemType', label: 'Item type', type: 'text', placeholder: 'e.g., First aid kit, blood pressure monitor' },
+    { key: 'safetyLevel', label: 'Safety level', type: 'text', placeholder: 'Low, medium, high, or notes' },
+    { key: 'sterilizationStatus', label: 'Sterilization status (if applicable)', type: 'text', placeholder: 'Sterile, cleaned, needs sterilization' },
+  ],
+  'Miscellaneous / Others': [
+    { key: 'justification', label: 'Clear justification', type: 'textarea', placeholder: 'Explain why this item does not fit the other categories.' },
+  ],
+};
+
+const CATEGORY_KEYWORDS = [
+  { category: 'Academic & School Supplies', keywords: ['book', 'notebook', 'calculator', 'pen', 'pencil', 'ruler', 'school', 'class', 'subject'] },
+  { category: 'Electronics & Gadgets', keywords: ['laptop', 'phone', 'tablet', 'charger', 'headphone', 'keyboard', 'mouse', 'monitor', 'device'] },
+  { category: 'Audio-Visual (AV) Equipment', keywords: ['projector', 'microphone', 'speaker', 'camera', 'av', 'audio', 'visual', 'hdmi', 'xlr'] },
+  { category: 'Sports & Athletics', keywords: ['ball', 'racket', 'jersey', 'helmet', 'sports', 'athletic', 'basketball', 'football', 'badminton'] },
+  { category: 'Board Games & Recreation', keywords: ['board game', 'card game', 'chess', 'monopoly', 'scrabble', 'game'] },
+  { category: 'Events & Organization Material', keywords: ['banner', 'stand', 'table', 'chair', 'event', 'organizer', 'booth'] },
+  { category: 'Tools & Maintenance', keywords: ['tool', 'drill', 'wrench', 'screwdriver', 'hammer', 'maintenance', 'ladder'] },
+  { category: 'Health & Wellness', keywords: ['health', 'wellness', 'first aid', 'thermometer', 'blood pressure', 'medical', 'sterile'] },
+];
+
+const CATEGORY_SUPPORT_NOTE = 'Use Miscellaneous / Others only when no other category fits. If it is selected, explain why in the justification field.';
+
 const EMPTY_STATS = {
   total_items: 0,
   available_items: 0,
@@ -34,6 +101,7 @@ function normalizeItem(item = {}) {
   const category = item.category || (Array.isArray(item.categories) ? item.categories.join(', ') : 'Uncategorized');
   const isAvailable = item.is_available ?? item.available ?? item.status === 'available';
   const owner = item.owner?.fullName || item.owner_name || item.owner?.username || item.owner?.email || 'Unknown Owner';
+  const ownerPhotoUrl = item.owner?.photoUrl || item.owner_photo_url || item.ownerPhotoUrl || '';
 
   return {
     id: String(item.id),
@@ -43,6 +111,7 @@ function normalizeItem(item = {}) {
     categories: item.categories || [],
     owner,
     ownerData: item.owner || null,
+    ownerPhotoUrl,
     image: item.image_url || item.imageUrl || item.image || '',
     status: isAvailable ? 'available' : 'borrowed',
     isOwner: Boolean(item.is_owner),
@@ -50,6 +119,8 @@ function normalizeItem(item = {}) {
     phoneNumber: item.phone_number || item.phoneNumber || 'Not provided',
     returnDate: item.returnDate || null,
     description: item.description || 'No description provided.',
+    details: parseDetails(item.details || item.details_json || item.detailsJson),
+    detailsJson: item.details_json || item.detailsJson || '',
     specs: [
       `Quantity: ${item.quantity || 1}`,
       `Contact: ${item.phone_number || item.phoneNumber || 'Not provided'}`,
@@ -63,6 +134,57 @@ function requestStatusClass(status = '') {
   if (lower === 'approved' || lower === 'returned') return 'available';
   if (lower === 'rejected') return 'borrowed';
   return 'me';
+}
+
+function getCategorySchema(category) {
+  return CATEGORY_DETAIL_SECTIONS[category] || [];
+}
+
+function suggestBestFitCategory(name = '', description = '', details = {}) {
+  const haystack = [name, description, ...Object.values(details || {})].join(' ').toLowerCase();
+  const match = CATEGORY_KEYWORDS.find((entry) => entry.keywords.some((keyword) => haystack.includes(keyword)));
+  return match?.category || '';
+}
+
+function formatFieldValue(value) {
+  if (value === true) return 'Yes';
+  if (value === false) return 'No';
+  return value || 'Not provided';
+}
+
+function UserAvatar({ name, photoUrl, className = '' }) {
+  const initials = (name || 'User')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('') || 'U';
+
+  return (
+    <div className={`owner-avatar ${className}`.trim()} aria-hidden="true">
+      {photoUrl ? (
+        <img src={photoUrl} alt="" className="owner-avatar-image" />
+      ) : (
+        <span className="owner-avatar-fallback">{initials}</span>
+      )}
+    </div>
+  );
+}
+
+function parseDetails(detailsValue) {
+  if (!detailsValue) return {};
+  if (typeof detailsValue === 'object') return detailsValue;
+
+  if (typeof detailsValue === 'string') {
+    try {
+      const parsed = JSON.parse(detailsValue);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  return {};
 }
 
 export function Dashboard({ onLogout, currentUser, onProfileUpdated }) {
@@ -82,16 +204,20 @@ export function Dashboard({ onLogout, currentUser, onProfileUpdated }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(20);
+  const [itemsTotal, setItemsTotal] = useState(0);
 
   const loadDashboard = async () => {
     setIsLoading(true);
     setError('');
     try {
-      const data = await fetchDashboardData();
+      const data = await fetchDashboardData({ search: searchQuery, status: statusFilter, page, size });
       setItems((data.items || []).map(normalizeItem));
       setCategories(data.categories || []);
       setStats(data.stats || EMPTY_STATS);
       setIncomingRequests(data.incoming_requests || []);
+      setItemsTotal(data.items_total || 0);
     } catch (err) {
       setError(err.message || 'Unable to load vault data.');
     } finally {
@@ -134,6 +260,12 @@ export function Dashboard({ onLogout, currentUser, onProfileUpdated }) {
     refreshAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    // Re-fetch when filters or pagination change
+    refreshAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, statusFilter, page, size]);
 
   useEffect(() => {
     if (view === 'requests') {
@@ -179,18 +311,7 @@ export function Dashboard({ onLogout, currentUser, onProfileUpdated }) {
   const displayEmail = sessionUser?.email || '';
   const initials = getInitials(fullName);
 
-  const filteredItems = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    return items.filter((item) => {
-      const matchesQuery = !query
-        || item.name.toLowerCase().includes(query)
-        || item.category.toLowerCase().includes(query)
-        || item.owner.toLowerCase().includes(query)
-        || item.description.toLowerCase().includes(query);
-      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-      return matchesQuery && matchesStatus;
-    });
-  }, [items, searchQuery, statusFilter]);
+  const filteredItems = useMemo(() => items, [items]);
 
   const myItems = useMemo(() => items.filter((item) => item.isOwner), [items]);
 
@@ -494,7 +615,7 @@ function ItemCard({ item, isAdmin, onSelectItem, onDeleteItem }) {
         <p className="item-desc">{item.description}</p>
         <div className="item-footer">
           <div className="item-owner">
-            <div className="item-owner-icon"><User size={18} /></div>
+              <UserAvatar name={item.owner} photoUrl={item.ownerPhotoUrl} />
             <div className="item-owner-details">
               <h6>Owner</h6>
               <p>{item.owner}</p>
@@ -534,6 +655,8 @@ function ItemDetailView({ item, onBack, onBorrowRequest }) {
   const [purpose, setPurpose] = useState('');
   const returnDateId = `return-date-${item.id}`;
   const purposeId = `purpose-${item.id}`;
+  const detailRows = Object.entries(item.details || {}).filter(([, value]) => String(value ?? '').trim() !== '');
+  const categorySchema = getCategorySchema(item.category);
 
   const handleSubmit = () => {
     if (!returnDate || !purpose.trim()) {
@@ -579,7 +702,7 @@ function ItemDetailView({ item, onBack, onBorrowRequest }) {
 
           <h1 className="detail-title">{item.name}</h1>
           <div className="detail-owner-card">
-            <div className="detail-owner-icon"><User size={24} /></div>
+            <UserAvatar name={item.owner} photoUrl={item.ownerPhotoUrl} className="detail-owner-avatar" />
             <div className="detail-owner-info">
               <h6>Authenticated Owner</h6>
               <p>{item.owner}</p>
@@ -588,8 +711,35 @@ function ItemDetailView({ item, onBack, onBorrowRequest }) {
 
           <p className="detail-desc">{item.description}</p>
 
+          {detailRows.length > 0 && (
+            <div className="detail-specs">
+              <div className="detail-specs-header">
+                <ClipboardList size={20} color="#4f46e5" />
+                <span>Category-Specific Details</span>
+              </div>
+              <div>
+                {detailRows.map(([key, value]) => {
+                  const label = categorySchema.find((field) => field.key === key)?.label || key;
+                  return (
+                    <div key={key} className="detail-spec-row">
+                      <span className="detail-spec-key">{label}</span>
+                      <span className="detail-spec-val">{formatFieldValue(value)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {item.status === 'available' && !item.isOwner && (
             <div className="detail-action-card">
+              <div className="borrow-owner-card">
+                <UserAvatar name={item.owner} photoUrl={item.ownerPhotoUrl} className="borrow-owner-avatar" />
+                <div className="borrow-owner-copy">
+                  <span className="borrow-owner-label">Requesting from</span>
+                  <strong>{item.owner}</strong>
+                </div>
+              </div>
               <div className="form-grp">
                 <label htmlFor={returnDateId}>Expected Return Date</label>
                 <div className="input-wrap">
@@ -636,21 +786,29 @@ function ItemFormView({ item, categories, onBack, onSubmit }) {
     imageFile: null,
     isAvailable: item ? item.status === 'available' : true,
   });
+  const [details, setDetails] = useState(item?.details || {});
+  const [formError, setFormError] = useState('');
 
   const [imagePreview, setImagePreview] = useState(
     item?.image && !item.image.startsWith('data:') && !item.image.startsWith('/api/') ? item.image : null
   );
 
+  const selectedCategory = formData.category;
+  const selectedFields = getCategorySchema(selectedCategory);
+  const categorySuggestion = selectedCategory === 'Miscellaneous / Others'
+    ? suggestBestFitCategory(formData.name, formData.description, details)
+    : '';
+
   const handleChange = (event) => {
     const { name, value, files, type, checked } = event.target;
-    
+
     if (type === 'file') {
       const file = files?.[0] || null;
       setFormData((prev) => ({
         ...prev,
         [name]: file,
       }));
-      
+
       // Show preview of selected file
       if (file) {
         const reader = new FileReader();
@@ -667,13 +825,40 @@ function ItemFormView({ item, categories, onBack, onSubmit }) {
     }
   };
 
+  const handleDetailChange = (event) => {
+    const { name, value } = event.target;
+    setDetails((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   const handleSubmit = (event) => {
     event.preventDefault();
+    setFormError('');
     if (!formData.name.trim()) {
-      alert('Item name is required.');
+      setFormError('Item name is required.');
       return;
     }
-    onSubmit(formData);
+
+    if (!formData.category) {
+      setFormError('Category is required.');
+      return;
+    }
+
+    const missingFields = selectedFields
+      .filter((field) => !String(details[field.key] || '').trim())
+      .map((field) => field.label);
+
+    if (missingFields.length > 0) {
+      setFormError(`Please fill in: ${missingFields.join(', ')}.`);
+      return;
+    }
+
+    onSubmit({
+      ...formData,
+      detailsJson: JSON.stringify(details),
+    });
   };
 
   const displayImage = imagePreview || (item?.image && !item.image.startsWith('data:') ? item.image : null);
@@ -689,6 +874,7 @@ function ItemFormView({ item, categories, onBack, onSubmit }) {
           <h2 className="dash-title-main">{item ? 'Edit Item' : 'Add Item'}</h2>
         </div>
         <form onSubmit={handleSubmit} className="vault-form">
+          {formError && <div className="form-error-banner">{formError}</div>}
           <div className="form-grp">
             <label>Item Name</label>
             <input name="name" value={formData.name} onChange={handleChange} className="form-input plain" placeholder="e.g., Graphing Calculator" />
@@ -700,6 +886,71 @@ function ItemFormView({ item, categories, onBack, onSubmit }) {
               {categories.map((category) => <option key={category} value={category}>{category}</option>)}
             </select>
           </div>
+
+          {selectedCategory && (
+            <div className="category-guidance">
+              <div className="category-guidance-header">
+                <ClipboardList size={18} />
+                <strong>Category: {selectedCategory}</strong>
+              </div>
+              <p>Required Fields to Fill:</p>
+              <ul>
+                {selectedFields.map((field) => (
+                  <li key={field.key}>{field.label}</li>
+                ))}
+              </ul>
+              {selectedCategory === 'Miscellaneous / Others' && (
+                <div className="category-warning">
+                  {CATEGORY_SUPPORT_NOTE}
+                  {categorySuggestion && categorySuggestion !== selectedCategory && (
+                    <div className="category-suggestion">
+                      Suggested best-fit category: <strong>{categorySuggestion}</strong>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {selectedFields.length > 0 && (
+            <div className="category-fields-grid">
+              {selectedFields.map((field) => (
+                <div className="form-grp" key={field.key}>
+                  <label>{field.label}</label>
+                  {field.type === 'textarea' ? (
+                    <textarea
+                      name={field.key}
+                      value={details[field.key] || ''}
+                      onChange={handleDetailChange}
+                      className="form-textarea plain"
+                      placeholder={field.placeholder || ''}
+                    />
+                  ) : field.type === 'select' ? (
+                    <select
+                      name={field.key}
+                      value={details[field.key] || ''}
+                      onChange={handleDetailChange}
+                      className="form-select plain"
+                    >
+                      <option value="">Select an option</option>
+                      {field.options?.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      name={field.key}
+                      value={details[field.key] || ''}
+                      onChange={handleDetailChange}
+                      className="form-input plain"
+                      placeholder={field.placeholder || ''}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="form-grid-two">
             <div className="form-grp">
               <label>Quantity</label>

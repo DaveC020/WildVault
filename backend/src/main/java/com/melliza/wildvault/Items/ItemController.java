@@ -25,8 +25,10 @@ public class ItemController {
             @RequestParam(defaultValue = "") String search,
             @RequestParam(defaultValue = "") String category,
             @RequestParam(defaultValue = "") String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
             Authentication authentication) {
-        return itemService.dashboard(search, category, status, authName(authentication));
+        return itemService.dashboard(search, category, status, page, size, authName(authentication));
     }
 
     @GetMapping({ "", "/" })
@@ -34,8 +36,10 @@ public class ItemController {
             @RequestParam(defaultValue = "") String search,
             @RequestParam(defaultValue = "") String category,
             @RequestParam(defaultValue = "") String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
             Authentication authentication) {
-        return itemService.collectionGet(search, category, status, authName(authentication));
+        return itemService.collectionGet(search, category, status, page, size, authName(authentication));
     }
 
     @PostMapping(value = { "", "/" }, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

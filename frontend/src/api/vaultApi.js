@@ -67,6 +67,7 @@ function buildItemFormData(item = {}) {
   formData.append('name', item.name || '');
   formData.append('description', item.description || '');
   formData.append('category', item.category || '');
+  formData.append('details_json', item.detailsJson || '{}');
   formData.append('quantity', String(item.quantity || 1));
   formData.append('is_available', String(item.isAvailable ?? true));
   formData.append('phone_number', item.phoneNumber || '');

@@ -27,6 +27,9 @@ public class ItemEntity {
     @Column(length = 300)
     private String category = "";
 
+    @Column(name = "details_json", columnDefinition = "TEXT")
+    private String detailsJson = "{}";
+
     @Column(name = "image_url", length = 1000)
     private String imageUrl;
 
@@ -55,42 +58,115 @@ public class ItemEntity {
     @OneToMany(mappedBy = "item", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<BorrowRequestEntity> borrowRequests = new ArrayList<>();
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public RegisterEntity getOwner() { return owner; }
-    public void setOwner(RegisterEntity owner) { this.owner = owner; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public RegisterEntity getOwner() {
+        return owner;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public void setOwner(RegisterEntity owner) {
+        this.owner = owner;
+    }
 
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
+    public String getName() {
+        return name;
+    }
 
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public String getUploadedImageUrl() { return uploadedImageUrl; }
-    public void setUploadedImageUrl(String uploadedImageUrl) { this.uploadedImageUrl = uploadedImageUrl; }
+    public String getDescription() {
+        return description;
+    }
 
-    public byte[] getImageData() { return imageData; }
-    public void setImageData(byte[] imageData) { this.imageData = imageData; }
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-    public String getImageContentType() { return imageContentType; }
-    public void setImageContentType(String imageContentType) { this.imageContentType = imageContentType; }
+    public String getCategory() {
+        return category;
+    }
 
-    public int getQuantity() { return quantity; }
-    public void setQuantity(int quantity) { this.quantity = quantity; }
+    public void setCategory(String category) {
+        this.category = category;
+    }
 
-    public boolean isAvailable() { return available; }
-    public void setAvailable(boolean available) { this.available = available; }
+    public String getDetailsJson() {
+        return detailsJson;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public void setDetailsJson(String detailsJson) {
+        this.detailsJson = detailsJson;
+    }
 
-    public String getPhoneNumber() { return phoneNumber; }
-    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public String getUploadedImageUrl() {
+        return uploadedImageUrl;
+    }
+
+    public void setUploadedImageUrl(String uploadedImageUrl) {
+        this.uploadedImageUrl = uploadedImageUrl;
+    }
+
+    public byte[] getImageData() {
+        return imageData;
+    }
+
+    public void setImageData(byte[] imageData) {
+        this.imageData = imageData;
+    }
+
+    public String getImageContentType() {
+        return imageContentType;
+    }
+
+    public void setImageContentType(String imageContentType) {
+        this.imageContentType = imageContentType;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
+    public boolean isAvailable() {
+        return available;
+    }
+
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
 }
