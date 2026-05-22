@@ -55,10 +55,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of(
-            "https://*.vercel.app",
-            "http://localhost:*",
-            "http://127.0.0.1:*"));
+        configuration.setAllowedOrigins(List.of(
+            "https://wildvault-frontend.vercel.app",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173"));
         configuration.setAllowCredentials(true);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));

@@ -1,0 +1,20 @@
+# Ignore local environment files
+.env.local
+.env
+
+# Ignore Maven target
+/target/
+
+# Node modules (frontend)
+/frontend/node_modules/
+
+# IDE files
+/.idea/
+.vscode/
+ 
+# Local env files
+/backend/.env.local
+/frontend/.env.local
+.env.render
+.env.local
+.env
