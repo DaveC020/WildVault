@@ -17,7 +17,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/users")
-@CrossOrigin(origins = "http://localhost:5173")
 public class UploadProfilePhotoController {
 
     private final UploadProfilePhotoService uploadProfilePhotoService;

@@ -7,7 +7,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/login")
-@CrossOrigin(origins = "http://localhost:5173") // Assuming React dev server like Vite defaults to 5173
 public class LoginController {
 
     private final LoginService loginService;
